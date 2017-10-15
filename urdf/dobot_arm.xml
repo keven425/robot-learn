@@ -1,0 +1,192 @@
+<robot name="dobot_arm">
+  <!-- Include materials -->
+  <material name="Black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="White">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <virtual_joint child_link="base_link" name="fixed_frame" parent_frame="base_link" type="fixed"/>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!-- BASE LINK -->
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0275"/>
+      <geometry>
+        <box size="0.168 0.168 0.055"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0275"/>
+      <geometry>
+        <box size="0.168 0.168 0.055"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <joint name="shoulder_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.055"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="300" lower="-2.35619449" upper="2.35619449" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!-- SHOULDER LINK -->
+  <link name="shoulder_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0425"/>
+      <geometry>
+        <cylinder length="0.085" radius="0.06"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0425"/>
+      <geometry>
+        <cylinder length="0.085" radius="0.06"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <joint name="bigarm_joint" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="bigarm_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.085"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="0.0" upper="1.483529864195" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!-- BIGARM LINK -->
+  <link name="bigarm_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0675"/>
+      <geometry>
+        <cylinder length="0.135" radius="0.03"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0675"/>
+      <geometry>
+        <cylinder length="0.135" radius="0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <joint name="forearm_joint" type="revolute">
+    <parent link="bigarm_link"/>
+    <child link="forearm_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.135"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="-0.1745329251994329577" upper="1.65806278939" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!--FOREARM LINK -->
+  <link name="forearm_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0735"/>
+      <geometry>
+        <cylinder length="0.147" radius="0.03"/>
+      </geometry>
+      <material name="Black"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0735"/>
+      <geometry>
+        <cylinder length="0.147" radius="0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <joint name="chuck_joint" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="chuck_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.147"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!--FOREARM LINK -->
+  <link name="chuck_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.02 0 0.0155"/>
+      <geometry>
+        <box size="0.08 0.03 0.03"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0155"/>
+      <geometry>
+        <box size="0.08 0.03 0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="bigarm_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="forearm_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="chuck_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+</robot>
+
