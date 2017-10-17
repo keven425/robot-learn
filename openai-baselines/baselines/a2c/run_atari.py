@@ -40,9 +40,10 @@ def main():
     parser.add_argument('--lrschedule', help='Learning rate schedule', choices=['constant', 'linear'], default='constant')
     parser.add_argument('--million_frames', help='How many frames to train (/ 1e6). '
         'This number gets divided by 4 due to frameskip', type=int, default=40)
+    parser.add_argument('--ncpu', help='number of parallel processes', type=int, default=1)
     args = parser.parse_args()
     train(args.env, num_frames=1e6 * args.million_frames, seed=args.seed, 
-        policy=args.policy, lrschedule=args.lrschedule, num_cpu=16)
+        policy=args.policy, lrschedule=args.lrschedule, num_cpu=args.ncpu)
 
 if __name__ == '__main__':
     main()
