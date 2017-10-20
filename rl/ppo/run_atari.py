@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import bench
+import os
 import os.path as osp
 import gym, logging
 from common import logger
@@ -42,7 +43,9 @@ def main():
     parser.add_argument('--env', help='environment ID', default='PongNoFrameskip-v4')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
+    parser.add_argument('--log', help='log directory', type=str, default='')
     args = parser.parse_args()
+    os.environ['OPENAI_LOGDIR'] = args.log
     config = Config()
     train(args.env, args.gpu, num_frames=40e6, config=config)
 
