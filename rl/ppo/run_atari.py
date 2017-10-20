@@ -13,7 +13,7 @@ def wrap_train(env):
     env = FrameStack(env, 4)
     return env
 
-def train(env_id, num_frames, config):
+def train(env_id, gpu, num_frames, config):
     from ppo.ppo_rl import PPO
     env = gym.make(env_id)
     env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"))
@@ -21,6 +21,7 @@ def train(env_id, num_frames, config):
     env = wrap_train(env)
     num_timesteps = int(num_frames / 4 * 1.1)
     ppo_rl = PPO(env,
+                 gpu=gpu,
                  policy=CnnPolicy,
                  timesteps_per_batch=config.timesteps_per_batch,
                  clip_param=config.clip_param,
@@ -40,9 +41,10 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--env', help='environment ID', default='PongNoFrameskip-v4')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
+    parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
     args = parser.parse_args()
     config = Config()
-    train(args.env, num_frames=40e6, config=config)
+    train(args.env, args.gpu, num_frames=40e6, config=config)
 
 if __name__ == '__main__':
     main()

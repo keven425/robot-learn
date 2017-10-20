@@ -13,6 +13,7 @@ from collections import deque
 class PPO(nn.Module):
     def __init__(self,
                  env,
+                 gpu,
                  policy,
                  timesteps_per_batch,  # timesteps per actor per update
                  clip_param,  # clipping parameter epsilon, entropy coeff
@@ -32,6 +33,7 @@ class PPO(nn.Module):
                  ):
         super(PPO, self).__init__()
         self.env = env
+        self.gpu = gpu
         self.timesteps_per_batch = timesteps_per_batch
         self.clip_param = clip_param
         self.entcoeff = entcoeff
@@ -56,6 +58,9 @@ class PPO(nn.Module):
         self.oldpi = policy("oldpi", self.ob_space, self.ac_space)  # Network for old policy
         self.optimizer = AdamVariableLr(self.parameters(), eps=self.adam_epsilon)
         self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
+        if self.gpu:
+            self.pi.cuda()
+            self.oldpi.cuda()
 
     '''
     atarg: Target advantage function (if applicable)
@@ -140,7 +145,7 @@ class PPO(nn.Module):
                 for batch in d.iterate_once(self.optim_batchsize):
                     self.optimizer.zero_grad()
                     batch['ob'] = rearrange_batch_image(batch['ob'])
-                    batch = convert_batch_tensor(batch)
+                    batch = self.convert_batch_tensor(batch)
                     total_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                     total_loss.backward()
                     self.optimizer.step(_step_size=self.optim_stepsize * cur_lrmult)
@@ -152,7 +157,7 @@ class PPO(nn.Module):
             losses = []
             for batch in d.iterate_once(self.optim_batchsize):
                 batch['ob'] = rearrange_batch_image(batch['ob'])
-                batch = convert_batch_tensor(batch)
+                batch = self.convert_batch_tensor(batch)
                 _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.numpy()
@@ -216,7 +221,7 @@ class PPO(nn.Module):
         while True:
             prevac = ac
             _ob = rearrange_image(ob)
-            _ob = convert_tensor(_ob)
+            _ob = self.convert_tensor(_ob)
             ac, vpred = pi.act(_ob) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
@@ -268,14 +273,17 @@ class PPO(nn.Module):
         seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
 
-def convert_batch_tensor(batch):
-    for key in batch.keys():
-        batch[key] = convert_tensor(batch[key])
-    return batch
+    def convert_batch_tensor(self, batch):
+        for key in batch.keys():
+            batch[key] = self.convert_tensor(batch[key])
+        return batch
 
 
-def convert_tensor(var):
-    return Variable(torch.from_numpy(var).float(), requires_grad=False)
+    def convert_tensor(self, var):
+        var = Variable(torch.from_numpy(var).float(), requires_grad=False)
+        if self.cuda:
+            var.cuda()
+        return var
 
 
 def rearrange_image(ob):
