@@ -150,7 +150,7 @@ class PPO(nn.Module):
                     total_loss.backward()
                     self.optimizer.step(_step_size=self.optim_stepsize * cur_lrmult)
                     losses.append(torch.stack(newlosses[0], dim=0).view(-1))
-                mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.numpy()
+                mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
                 logger.log(fmt_row(13, mean_losses))
 
             logger.log("Evaluating losses...")
@@ -160,7 +160,7 @@ class PPO(nn.Module):
                 batch = self.convert_batch_tensor(batch)
                 _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
-            mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.numpy()
+            mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
             logger.log(fmt_row(13, mean_losses))
 
             for (lossval, name) in zipsame(mean_losses, self.loss_names):
@@ -281,7 +281,7 @@ class PPO(nn.Module):
 
     def convert_tensor(self, var):
         var = Variable(torch.from_numpy(var).float(), requires_grad=False)
-        if self.cuda:
+        if self.gpu:
             var = var.cuda()
         return var
 

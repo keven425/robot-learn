@@ -47,9 +47,9 @@ class CnnPolicy(nn.Module):
     def act(self, ob):
         ob = ob[None]  # add dimension: first axis of size 1
         act_logits, value = self.forward(ob)
-        act_p = softmax(act_logits.data.numpy())
+        act_p = softmax(act_logits.data.cpu().numpy())
         act = np.random.choice(self.n_act, p=act_p[0])
-        value = float(value.data.numpy())
+        value = float(value.data.cpu().numpy())
         return act, value
 
 
