@@ -56,11 +56,12 @@ class PPO(nn.Module):
         self.ac_space = env.action_space
         self.pi = policy("pi", self.ob_space, self.ac_space)  # Construct network for new policy
         self.oldpi = policy("oldpi", self.ob_space, self.ac_space)  # Network for old policy
-        self.optimizer = AdamVariableLr(self.parameters(), eps=self.adam_epsilon)
-        self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
+        # only gradient descent on new policy
+        self.optimizer = AdamVariableLr(self.pi.parameters(), eps=self.adam_epsilon)
+        self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     '''
     atarg: Target advantage function (if applicable)
