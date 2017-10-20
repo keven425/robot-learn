@@ -60,8 +60,9 @@ class PPO(nn.Module):
             self.pi.cuda()
             self.oldpi.cuda()
         # only gradient descent on new policy
-        self.optimizer = AdamVariableLr(self.pi.parameters(), eps=self.adam_epsilon)
+        self.optimizer = AdamVariableLr(self.pi.parameters(), lr=self.optim_stepsize, eps=self.adam_epsilon)
         self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
+
 
     '''
     atarg: Target advantage function (if applicable)
@@ -82,13 +83,13 @@ class PPO(nn.Module):
         ac_is = ac.view(-1, 1).long()
         act_logp_old = softmax_logp(act_logits_old)
         act_logp_new = softmax_logp(act_logits_new)
-        act_logp_old = torch.gather(act_logp_old, 1, ac_is)
-        act_logp_new = torch.gather(act_logp_new, 1, ac_is)
+        act_logp_old = torch.gather(act_logp_old, 1, ac_is).view(-1)
+        act_logp_new = torch.gather(act_logp_new, 1, ac_is).view(-1)
         ratio = torch.exp(act_logp_new - act_logp_old)  # pnew / pold
-        _atarg = atarg.view(-1, 1)
-        surr1 = ratio * _atarg  # surrogate from conservative policy iteration
-        surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * _atarg  #
+        surr1 = ratio * atarg  # surrogate from conservative policy iteration
+        surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg  #
         pol_surr = -torch.mean(torch.min(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
+        assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
         total_loss = pol_surr + pol_entpen + vf_loss
         losses = [pol_surr, pol_entpen, vf_loss, mean_kl, mean_entropy]

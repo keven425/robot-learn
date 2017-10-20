@@ -40,7 +40,7 @@ class CnnPolicy(nn.Module):
         x = x.view(x.size(0), -1) # flatten
         x = self.relu(self.fc1(x))
         act_logits = self.fc_act(x)
-        value = self.fc_val(x)
+        value = self.fc_val(x).view(-1) # flatten
         return act_logits, value
 
 
