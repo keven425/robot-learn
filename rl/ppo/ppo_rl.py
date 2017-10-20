@@ -282,7 +282,7 @@ class PPO(nn.Module):
     def convert_tensor(self, var):
         var = Variable(torch.from_numpy(var).float(), requires_grad=False)
         if self.cuda:
-            var.cuda()
+            var = var.cuda()
         return var
 
 
