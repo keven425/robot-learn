@@ -274,11 +274,11 @@ def configure(dir=None, format_strs=None):
     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats)
     log('Logging to %s'%dir)
 
-if os.getenv('OPENAI_LOGDIR'): 
-    # if OPENAI_LOGDIR is set, configure the logger on import
-    # this kind of nasty (unexpected to user), but I don't know how else to inject the logger
-    # to a script that's getting run in a subprocess
-    configure(dir=os.getenv('OPENAI_LOGDIR'))
+# if os.getenv('OPENAI_LOGDIR'):
+#     # if OPENAI_LOGDIR is set, configure the logger on import
+#     # this kind of nasty (unexpected to user), but I don't know how else to inject the logger
+#     # to a script that's getting run in a subprocess
+#     configure(dir=os.getenv('OPENAI_LOGDIR'))
 
 def reset():
     Logger.CURRENT = Logger.DEFAULT
