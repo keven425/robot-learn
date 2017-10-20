@@ -1,0 +1,30 @@
+<mujoco model="dobot_arm">
+    <compiler angle="radian" />
+    <size njmax="500" nconmax="100" />
+    <worldbody>
+        <body name="base_link" pos="0 0.3 0">
+            <!--<inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass="1" diaginertia="1 1 0.5" />-->
+            <geom size="0.084 0.084 0.0275" pos="0 0 0.0275" type="box" rgba="1 1 1 1" />
+            <body name="shoulder_link" pos="0 0 0.055">
+                <!--<inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass="1" diaginertia="1 1 0.5" />-->
+                <joint name="shoulder_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
+                <geom size="0.06 0.0425" pos="0 0 0.0425" type="cylinder" rgba="0.8 0 0 1" />
+                <body name="bigarm_link" pos="0 0 0.085">
+                    <!--<inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass="1" diaginertia="1 1 0.5" />-->
+                    <joint name="bigarm_joint" pos="0 0 0" axis="0 1 0" limited="true" range="0 1.48353" />
+                    <geom size="0.03 0.0675" pos="0 0 0.0675" type="cylinder" rgba="1 1 1 1" />
+                    <body name="forearm_link" pos="0 0 0.135">
+                        <!--<inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass="1" diaginertia="1 1 0.5" />-->
+                        <joint name="forearm_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-0.174533 1.65806" />
+                        <geom size="0.03 0.0735" pos="0 0 0.0735" type="cylinder" rgba="0 0 0 1" />
+                        <body name="chuck_link" pos="0 0 0.147">
+                            <!--<inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass="1" diaginertia="1 1 0.5" />-->
+                            <joint name="chuck_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-1.5708 1.5708" />
+                            <geom size="0.04 0.015 0.015" pos="0 0 0.0155" type="box" rgba="0.8 0 0 1" />
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+</mujoco>
