@@ -1,0 +1,25 @@
+<mujoco model="dobot_push">
+    <!--default-->
+    <default>
+        <motor ctrlrange='-1 1' ctrllimited='true'/>
+        <default class="robot_joint">
+            <joint damping='1' armature='0'/>
+        </default>
+    </default>
+
+    <!--environment-->
+    <worldbody>
+        <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
+        <!--table-->
+        <geom type="plane" size="0.15 0.15 0.1" rgba="1 1 1 1"/>
+        <!--cube-->
+        <body pos="0 0 1">
+            <joint type="free"/>
+            <geom name="cube" pos="0 0 0" size="0.02 0.02 0.02" type="box"/>
+        </body>
+    </worldbody>
+
+    <!--robot-->
+    <include file="./dobot.xml"/>
+</mujoco>
+
