@@ -201,6 +201,7 @@ class PPO(nn.Module):
                      self.max_seconds > 0]) == 1,
                 "Only one time constraint permitted")
 
+
     def traj_segment_generator(self, pi, env, horizon):
         t = 0
         ac = env.action_space.sample()  # not used, just so we have the datatype
