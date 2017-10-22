@@ -268,8 +268,8 @@ class PushObjectEnv(utils.EzPickle):
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
     for i in range(1000):
-        env.step([0., 1., .0, .0])
+        env.step([1., 1., 1., 1.])
         env.render()
     for i in range(10000):
-        env.step([0., -.1, .0, .0])
+        env.step([-1., -1., -1., -1.])
         env.render()
