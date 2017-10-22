@@ -6,37 +6,31 @@ from gym.utils import seeding
 import numpy as np
 from os import path
 import six
+import mujoco_py
 
-try:
-    import mujoco_py
-    from mujoco_py.mjlib import mjlib
-except ImportError as e:
-    raise Exception("{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(e))
 
 class PushObjectEnv(utils.EzPickle):
 
-    def __init__(self, model_path, frame_skip):
-        if model_path.startswith("/"):
-            fullpath = model_path
-        else:
-            fullpath = os.path.join(os.path.dirname(__file__), "assets", model_path)
-        if not path.exists(fullpath):
-            raise IOError("File %s does not exist" % fullpath)
+    def __init__(self, frame_skip):
         self.frame_skip = frame_skip
-        self.model = mujoco_py.MjModel(fullpath)
-        self.data = self.model.data
-        self.viewer = None
+
+        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dobot_push.xml')
+        self.model = mujoco_py.load_model_from_path(model_path)
+        self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
+        self.data = self.sim.data
+        self.viewer = mujoco_py.MjViewer(self.sim)
 
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
             'video.frames_per_second': int(np.round(1.0 / self.dt))
         }
 
-        self.init_qpos = self.model.data.qpos.ravel().copy()
-        self.init_qvel = self.model.data.qvel.ravel().copy()
-        observation, _reward, done, _info = self._step(np.zeros(self.model.nu))
-        assert not done
-        self.obs_dim = observation.size
+        # initial position/velocity of robot and box
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
+        _ob, _reward, _done, _info = self.step(np.zeros(self.model.nu))
+        assert not _done
+        self.obs_dim = _ob.size
 
         bounds = self.model.actuator_ctrlrange.copy()
         low = bounds[:, 0]
@@ -46,7 +40,7 @@ class PushObjectEnv(utils.EzPickle):
         high = np.inf*np.ones(self.obs_dim)
         low = -high
         self.observation_space = Box(low, high)
-        self._seed()
+        self.seed()
 
         # close on exit
         atexit.register(self.close)
@@ -74,6 +68,7 @@ class PushObjectEnv(utils.EzPickle):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
+
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -90,8 +85,13 @@ class PushObjectEnv(utils.EzPickle):
             done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
+        self.sim
+        self.do_simulation(action)
+        ob = self._get_obs()
+        reward = 0.
+        done = False
+        return ob, reward, done, dict()
 
-        raise NotImplementedError
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
@@ -99,11 +99,8 @@ class PushObjectEnv(utils.EzPickle):
         Returns: observation (object): the initial observation of the
             space.
         """
-        mjlib.mj_resetData(self.model.ptr, self.data.ptr)
+        self.sim.reset()
         ob = self.reset_model()
-        if self.viewer is not None:
-            self.viewer.autoscale()
-            self.viewer_setup()
         return ob
 
 
@@ -153,16 +150,17 @@ class PushObjectEnv(utils.EzPickle):
                 raise Exception('Unsupported rendering mode: {}. (Supported modes for {}: {})'.format(mode, self, modes))
         if close:
             if self.viewer is not None:
-                self._get_viewer().finish()
+                self.viewer.finish()
                 self.viewer = None
             return
 
         if mode == 'rgb_array':
-            self._get_viewer().render()
+            self.viewer.render()
             data, width, height = self._get_viewer().get_image()
             return np.fromstring(data, dtype='uint8').reshape(height, width, 3)[::-1, :, :]
         elif mode == 'human':
-            self._get_viewer().loop_once()
+            self.viewer.render()
+
 
     def close(self):
           """Override _close in your subclass to perform any necessary cleanup.
@@ -175,9 +173,6 @@ class PushObjectEnv(utils.EzPickle):
           if not hasattr(self, '_closed') or self._closed:
             return
 
-          if self._owns_render:
-            self.render(close=True)
-
           self._close()
           self._closed = True
 
@@ -188,7 +183,9 @@ class PushObjectEnv(utils.EzPickle):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
-        raise NotImplementedError
+        self.set_state(self.init_qpos, self.init_qvel)
+        return self._get_obs()
+
 
     def viewer_setup(self):
         """
@@ -204,43 +201,75 @@ class PushObjectEnv(utils.EzPickle):
 
     def set_state(self, qpos, qvel):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
-        self.model.data.qpos = qpos
-        self.model.data.qvel = qvel
-        self.model._compute_subtree()  # pylint: disable=W0212
-        self.model.forward()
+        state = self.sim.get_state()
+        state.qpos = qpos
+        state.qvel = qvel
+        self.sim.set_state(state)
+        self.sim.forward()
+        # self.sim.data.qpos = qpos
+        # self.sim.data.qvel = qvel
+        # self.model._compute_subtree()  # pylint: disable=W0212
+        # self.model.forward()
+
 
     @property
     def dt(self):
         return self.model.opt.timestep * self.frame_skip
 
-    def do_simulation(self, ctrl, n_frames):
-        self.model.data.ctrl = ctrl
-        for _ in range(n_frames):
-            self.model.step()
 
-    def _get_viewer(self):
-        if self.viewer is None:
-            self.viewer = mujoco_py.MjViewer()
-            self.viewer.start()
-            self.viewer.set_model(self.model)
-            self.viewer_setup()
-        return self.viewer
+    def do_simulation(self, ctrl):
+        self.sim.data.ctrl[:] = ctrl
+        self.sim.step()
+        self.sim.forward()
+
+
+    # def _get_viewer(self):
+    #     if self.viewer is None:
+    #         self.viewer = mujoco_py.MjViewer()
+    #         self.viewer.start()
+    #         self.viewer.set_model(self.model)
+    #         self.viewer_setup()
+    #     return self.viewer
+
 
     # com: center of mass?
     def get_body_com(self, body_name):
         idx = self.model.body_names.index(six.b(body_name))
         return self.model.data.com_subtree[idx]
 
+
     def get_body_comvel(self, body_name):
         idx = self.model.body_names.index(six.b(body_name))
         return self.model.body_comvels[idx]
+
 
     def get_body_xmat(self, body_name):
         idx = self.model.body_names.index(six.b(body_name))
         return self.model.data.xmat[idx].reshape((3, 3))
 
-    def state_vector(self):
+
+    # def state_vector(self):
+    #     return np.concatenate([
+    #         self.model.data.qpos.flat,
+    #         self.model.data.qvel.flat
+    #     ])
+
+
+    def _get_obs(self):
+        theta = self.data.qpos
         return np.concatenate([
-            self.model.data.qpos.flat,
-            self.model.data.qvel.flat
+            np.cos(theta),
+            np.sin(theta),
+            self.data.qpos.flat[2:],
+            self.data.qvel.flat[:2]
         ])
+
+
+if __name__ == '__main__':
+    env = PushObjectEnv(frame_skip=1)
+    for i in range(1000):
+        env.step([0., 1., .0, .0])
+        env.render()
+    for i in range(10000):
+        env.step([0., -.1, .0, .0])
+        env.render()

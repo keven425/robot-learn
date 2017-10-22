@@ -1,9 +1,9 @@
 <mujoco model="dobot_push">
     <!--default-->
     <default>
-        <motor ctrlrange='-1 1' ctrllimited='true'/>
+        <velocity ctrlrange='-1 1' kv="10" ctrllimited='true'/>
         <default class="robot_joint">
-            <joint damping='1' armature='0'/>
+            <joint damping='.1' armature='0.01'/>
         </default>
     </default>
 

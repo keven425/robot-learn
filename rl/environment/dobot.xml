@@ -28,9 +28,9 @@
         </body>
     </worldbody>
     <actuator>
-		<motor name="shoulder_motor" joint="shoulder_joint"/>
-		<motor name="bigarm_motor" joint="bigarm_joint"/>
-        <motor name="forearm_motor" joint="forearm_joint"/>
-        <motor name="chuck_motor" joint="chuck_joint"/>
+		<velocity name="shoulder_motor" joint="shoulder_joint"/>
+		<velocity name="bigarm_motor" joint="bigarm_joint"/>
+        <velocity name="forearm_motor" joint="forearm_joint"/>
+        <velocity name="chuck_motor" joint="chuck_joint"/>
 	</actuator>
 </mujoco>
