@@ -12,6 +12,22 @@
   <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
   <virtual_joint child_link="base_link" name="fixed_frame" parent_frame="base_link" type="fixed"/>
   <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!-- DUMMY LINK -->
+  <link name="base_dummy_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+  </link>
+  <joint name="base_dummy_joint" type="fixed">
+    <parent link="base_dummy_link"/>
+    <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 0 0"/>
+  </joint>
   <!-- BASE LINK -->
   <link name="base_link">
     <visual>
@@ -95,7 +111,7 @@
     <child link="forearm_link"/>
     <origin rpy="0 0 0" xyz="0 0 0.135"/>
     <axis xyz="0 1 0"/>
-    <limit effort="300" lower="-0.1745329251994329577" upper="1.65806278939" velocity="1"/>
+    <limit effort="300" lower="-0.7745329251994329577" upper="1.05806278939" velocity="1"/>
     <dynamics damping="50" friction="1"/>
   </joint>
   <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
@@ -119,17 +135,17 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
-  <joint name="chuck_joint" type="revolute">
+  <joint name="fake_joint" type="revolute">
     <parent link="forearm_link"/>
-    <child link="chuck_link"/>
+    <child link="fake_link"/>
     <origin rpy="0 0 0" xyz="0 0 0.147"/>
     <axis xyz="0 1 0"/>
-    <limit effort="300" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="1"/>
+    <limit effort="300" lower="-2.8707963267948966" upper="0.2707963267948966" velocity="1"/>
     <dynamics damping="50" friction="1"/>
   </joint>
   <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
-  <!--FOREARM LINK -->
-  <link name="chuck_link">
+  <!--FAKE LINK -->
+  <link name="fake_link">
     <visual>
       <origin rpy="0 0 0" xyz="0.02 0 0.0155"/>
       <geometry>
@@ -138,7 +154,7 @@
       <material name="Red"/>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 0.0155"/>
+      <origin rpy="0 0 0" xyz="0.02 0 0.0155"/>
       <geometry>
         <box size="0.08 0.03 0.03"/>
       </geometry>
@@ -148,6 +164,65 @@
       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
     </inertial>
   </link>
+  <joint name="chuck_joint" type="revolute">
+    <parent link="fake_link"/>
+    <child link="chuck_link"/>
+    <origin rpy="0 0 0" xyz="0.05 0 0.0405"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" lower="-3" upper="3" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!--STICK LINK -->
+  <link name="chuck_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.005 0 -0.075"/>
+      <geometry>
+        <cylinder radius="0.01" length="0.07"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.005 0 -0.075"/>
+      <geometry>
+        <cylinder radius="0.01" length="0.07"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <joint name="stick_joint" type="fixed">
+    <parent link="chuck_link"/>
+    <child link="stick_link"/>
+    <origin rpy="0 0.5 0" xyz="0 0 -0.11"/>
+    <axis xyz="0 0 0"/>
+    <limit effort="0" lower="0" upper="0" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+  <!--STICK LINK -->
+  <link name="stick_link">
+    <visual>
+      <origin rpy="0 1 0" xyz="0.03 0 0.017"/>
+      <geometry>
+        <cylinder radius="0.0055" length="0.07"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 1 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.0055" length="0.07"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="1.0" izz="1.0"/>
+    </inertial>
+  </link>
+
   <transmission name="tran1">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="shoulder_joint">
