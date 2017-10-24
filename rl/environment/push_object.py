@@ -4,7 +4,6 @@ from gym.spaces import Box
 from gym import utils
 from gym.utils import seeding
 import numpy as np
-from os import path
 import six
 import mujoco_py
 
@@ -19,20 +18,36 @@ class PushObjectEnv(utils.EzPickle):
         self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
         self.data = self.sim.data
         self.viewer = mujoco_py.MjViewer(self.sim)
-
+        self.joint_names = list(self.sim.model.joint_names)
+        self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
+        self.obj_name = 'cube'
+        self.goal_pos = np.array([.2, .2])
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
             'video.frames_per_second': int(np.round(1.0 / self.dt))
         }
 
+        pos_actuators = [actuator for actuator in self.model.actuator_names if 'position' in actuator]
+        vel_actuators = [actuator for actuator in self.model.actuator_names if 'velocity' in actuator]
+        assert(len(pos_actuators) + len(vel_actuators) == len(self.model.actuator_names))
+        self.pos_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in pos_actuators]
+        self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
+        self.actuator_ids = self.pos_actuator_ids
+        self.act_dim = len(self.actuator_ids)
+
+        # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
+        pos_actuators_joints = self.model.actuator_trnid[self.pos_actuator_ids][:, 0]
+        self.joint_ranges = [self.model.jnt_range[joint] for joint in pos_actuators_joints]
+        self.joint_ranges = np.array(self.joint_ranges)
+
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
         self.init_qvel = self.data.qvel.ravel().copy()
-        _ob, _reward, _done, _info = self.step(np.zeros(self.model.nu))
+        _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
         self.obs_dim = _ob.size
 
-        bounds = self.model.actuator_ctrlrange.copy()
+        bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
         low = bounds[:, 0]
         high = bounds[:, 1]
         self.action_space = Box(low, high)
@@ -40,6 +55,7 @@ class PushObjectEnv(utils.EzPickle):
         high = np.inf*np.ones(self.obs_dim)
         low = -high
         self.observation_space = Box(low, high)
+        self.reward_range = (-np.inf, np.inf)
         self.seed()
 
         # close on exit
@@ -88,7 +104,11 @@ class PushObjectEnv(utils.EzPickle):
         self.sim
         self.do_simulation(action)
         ob = self._get_obs()
-        reward = 0.
+        obj_pos_xy = self.get_body_com(self.obj_name)[:2]
+        reward_dist = -np.linalg.norm(obj_pos_xy - self.goal_pos)
+        reward = reward_dist
+        # reward_ctrl = -np.square(action).mean()
+        # reward = reward_dist + reward_ctrl
         done = False
         return ob, reward, done, dict()
 
@@ -179,6 +199,10 @@ class PushObjectEnv(utils.EzPickle):
 
     # ----------------------------
 
+    @property
+    def spec(self):
+        return None
+
     def reset_model(self):
         """
         Reset the robot degrees of freedom (qpos and qvel).
@@ -202,8 +226,8 @@ class PushObjectEnv(utils.EzPickle):
     def set_state(self, qpos, qvel):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
         state = self.sim.get_state()
-        state.qpos = qpos
-        state.qvel = qvel
+        state.qpos[:] = qpos
+        state.qvel[:] = qvel
         self.sim.set_state(state)
         self.sim.forward()
         # self.sim.data.qpos = qpos
@@ -218,7 +242,21 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def do_simulation(self, ctrl):
-        self.sim.data.ctrl[:] = ctrl
+        # compute end position given velocity control
+        # qpos_ctrl = [self.sim.data.qpos[addr] + qvel * self.dt for  (addr, qvel) in zip(self.joint_addrs, ctrl)]
+        # print(str(qpos_ctrl))
+
+        # compute velocity control
+        n_vel_actuators = len(self.vel_actuator_ids)
+        vel_ctrl = np.zeros(shape=[n_vel_actuators])
+        # clip by -1, 1
+        ctrl = np.clip(ctrl, -1., 1.)
+        # scale position control up to joint range
+        low = self.joint_ranges[:, 0]
+        high = self.joint_ranges[:, 1]
+        pos_ctrl = low + (ctrl + 1.) / 2. * (high - low)
+        self.sim.data.ctrl[self.actuator_ids] = pos_ctrl
+        self.sim.data.ctrl[self.vel_actuator_ids] = vel_ctrl  # set velocity to zero for damping
         self.sim.step()
         self.sim.forward()
 
@@ -234,18 +272,18 @@ class PushObjectEnv(utils.EzPickle):
 
     # com: center of mass?
     def get_body_com(self, body_name):
-        idx = self.model.body_names.index(six.b(body_name))
-        return self.model.data.com_subtree[idx]
+        idx = self.model.body_name2id(body_name)
+        return self.data.body_xpos[idx]
 
 
     def get_body_comvel(self, body_name):
-        idx = self.model.body_names.index(six.b(body_name))
-        return self.model.body_comvels[idx]
+        idx = self.model.body_name2id(body_name)
+        return self.data.xvelp[idx]
 
 
     def get_body_xmat(self, body_name):
-        idx = self.model.body_names.index(six.b(body_name))
-        return self.model.data.xmat[idx].reshape((3, 3))
+        idx = self.model.body_name2id(body_name)
+        return self.data.xmat[idx].reshape((3, 3))
 
 
     # def state_vector(self):
@@ -256,20 +294,36 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
-        theta = self.data.qpos
+        qpos = self.data.qpos
+        qvel = self.data.qvel
+        cube_com = self.get_body_com("cube")
         return np.concatenate([
-            np.cos(theta),
-            np.sin(theta),
-            self.data.qpos.flat[2:],
-            self.data.qvel.flat[:2]
+            cube_com,
+            np.cos(qpos),
+            np.sin(qpos),
+            qpos,
+            qvel,
+            cube_com
         ])
 
 
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
-    for i in range(1000):
-        env.step([1., 1., 1., 1.])
+    for i in range(3000):
+        env.step([0., 0., 0., 0., 0.])
         env.render()
-    for i in range(10000):
-        env.step([-1., -1., -1., -1.])
+    for i in range(3000):
+        env.step([1., 1., 1., 1., 1.])
         env.render()
+    for i in range(3000):
+        env.step([-1., -1., -1., -1., -1.])
+        env.render()
+    # for i in range(3000):
+    #     env.step([-1., -1., -1., -1., -1.])
+    #     env.render()
+    # for i in range(1000):
+    #     env.step([0., .1, 0., 0., 0.])
+    #     env.render()
+    # for i in range(1000):
+    #     env.step([0., -.1, 0., 0., 0.])
+    #     env.render()

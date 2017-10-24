@@ -9,7 +9,7 @@
                 <geom size="0.084 0.084 0.0275" pos="0 0 0.0275" type="box" rgba="1 1 1 1" />
                 <body name="shoulder_link" pos="0 0 0.0425">
                     <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                    <joint name="shoulder_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
+                    <joint name="shoulder_joint" damping='1.' pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
                     <geom size="0.06 0.0325" pos="0 0 0.0425" type="cylinder" rgba="0.8 0 0 1" />
                     <body name="bigarm_link" pos="0 0 0.109">
                         <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
@@ -40,15 +40,16 @@
         </body>
     </worldbody>
     <actuator>
-		<!--<position name="shoulder_motor" joint="shoulder_joint"/>-->
-		<!--<position name="bigarm_motor" joint="bigarm_joint"/>-->
-        <!--<position name="forearm_motor" joint="forearm_joint"/>-->
-        <!--<position name="fake_joint" joint="chuck_joint"/>-->
-        <!--<position name="chuck_motor" joint="chuck_joint"/>-->
-        <velocity name="shoulder_motor" joint="shoulder_joint"/>
-		<velocity name="bigarm_motor" joint="bigarm_joint"/>
-        <velocity name="forearm_motor" joint="forearm_joint"/>
-        <velocity name="fake_joint" joint="chuck_joint"/>
-        <velocity name="chuck_motor" joint="chuck_joint"/>
+        <!--need to define ctrllimited='false' for <position>, because velocity config will override polisition config-->
+		<position name="shoulder_position" joint="shoulder_joint" ctrllimited='false'/>
+		<position name="bigarm_position" joint="bigarm_joint" ctrllimited='false'/>
+        <position name="forearm_position" joint="forearm_joint" ctrllimited='false'/>
+        <position name="fake_joint_position" joint="fake_joint" ctrllimited='false'/>
+        <position name="chuck_position" joint="chuck_joint" ctrllimited='false'/>
+        <velocity name="shoulder_velocity" joint="shoulder_joint"/>
+		<velocity name="bigarm_velocity" joint="bigarm_joint"/>
+        <velocity name="forearm_velocity" joint="forearm_joint"/>
+        <velocity name="fake_joint_velocity" joint="fake_joint"/>
+        <velocity name="chuck_velocity" joint="chuck_joint"/>
 	</actuator>
 </mujoco>
