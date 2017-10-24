@@ -1,19 +1,25 @@
 <mujoco model="dobot_push">
     <!--default-->
     <default>
-        <velocity ctrlrange='-1 1' kv="10" ctrllimited='true'/>
+        <!--<position kp="1" ctrlrange='-1 1' ctrllimited='true'/>-->
+        <velocity kv="10" ctrlrange='-1 1' ctrllimited='true'/>
         <default class="robot_joint">
-            <joint damping='.1' armature='0.01'/>
+            <joint damping='100.' armature='0.01'/>
         </default>
     </default>
+
+    <asset>
+        <texture builtin="checker" type="2d" height="100" width="100" mark="none" markrgb="1 1 1" name="square_box" rgb1="0. 0. 0." rgb2="1. 1. 1."/>
+        <material name="plane" texrepeat="5 5" texture="square_box"/>
+    </asset>
 
     <!--environment-->
     <worldbody>
         <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
         <!--table-->
-        <geom type="plane" size="0.15 0.15 0.1" rgba="1 1 1 1"/>
+        <geom type="plane" material="plane" size="0.15 0.15 0.1" rgba="1 1 1 1"/>
         <!--cube-->
-        <body pos="0 0 1">
+        <body name="cube" pos="0 0 0">
             <joint type="free"/>
             <geom name="cube" pos="0 0 0" size="0.02 0.02 0.02" type="box"/>
         </body>
