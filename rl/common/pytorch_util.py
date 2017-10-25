@@ -1,11 +1,15 @@
 import torch
 import numpy as np
-from scipy.special import logsumexp
 
 
 def softmax_p(x):
   e_x = torch.exp(x - torch.max(x, dim=1)[0])
   return e_x / torch.sum(e_x, dim=1)
+
+
+def log_prob(act_is, logits):
+  act_logp = softmax_logp(logits)
+  return torch.gather(act_logp, 1, act_is).view(-1)
 
 
 def softmax_logp(x):
@@ -29,5 +33,5 @@ def np_softmax_logp(x):
 
 if __name__ == '__main__':
   x = np.array([[1., 2.], [2., 3.], [3., 4.]])
-  logp = np_softmax_logp(x)
-  print(str(logp))
+  _logp = np_softmax_logp(x)
+  print(str(_logp))

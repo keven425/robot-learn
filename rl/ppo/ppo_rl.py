@@ -4,7 +4,7 @@ from torch.autograd import Variable
 from ppo.adam_var_lr import AdamVariableLr
 import numpy as np
 from common import logger, Dataset, explained_variance, fmt_row, zipsame
-from common.pytorch_util import softmax_logp
+from common.pytorch_util import log_prob
 import time
 from collections import deque
 
@@ -81,10 +81,8 @@ class PPO(nn.Module):
         pol_entpen = -mean_entropy * self.entcoeff
 
         ac_is = ac.view(-1, 1).long()
-        act_logp_old = softmax_logp(act_logits_old)
-        act_logp_new = softmax_logp(act_logits_new)
-        act_logp_old = torch.gather(act_logp_old, 1, ac_is).view(-1)
-        act_logp_new = torch.gather(act_logp_new, 1, ac_is).view(-1)
+        act_logp_old = log_prob(ac_is, act_logits_old)
+        act_logp_new = log_prob(ac_is, act_logits_new)
         ratio = torch.exp(act_logp_new - act_logp_old)  # pnew / pold
         surr1 = ratio * atarg  # surrogate from conservative policy iteration
         surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg  #
