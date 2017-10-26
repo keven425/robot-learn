@@ -13,6 +13,7 @@ from collections import deque
 class PPO(nn.Module):
     def __init__(self,
                  env,
+                 prob_dist,
                  gpu,
                  policy,
                  timesteps_per_batch,  # timesteps per actor per update
@@ -33,6 +34,7 @@ class PPO(nn.Module):
                  ):
         super(PPO, self).__init__()
         self.env = env
+        self.prob_dist = prob_dist
         self.gpu = gpu
         self.timesteps_per_batch = timesteps_per_batch
         self.clip_param = clip_param
@@ -54,8 +56,8 @@ class PPO(nn.Module):
         # ----------------------------------------
         self.ob_space = env.observation_space
         self.ac_space = env.action_space
-        self.pi = policy("pi", self.ob_space, self.ac_space)  # Construct network for new policy
-        self.oldpi = policy("oldpi", self.ob_space, self.ac_space)  # Network for old policy
+        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=2)  # Construct network for new policy
+        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=2)  # Network for old policy
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
@@ -71,24 +73,25 @@ class PPO(nn.Module):
     '''
     def forward(self, ob, ac, atarg, _return, lr_mult):
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
-        act_logits_old, value_old = self.oldpi.forward(ob)
-        act_logits_new, value_new = self.pi.forward(ob)
+        act_means_old, act_log_stds_old, value_old = self.oldpi.forward(ob)
+        act_means_new, act_log_stds_new, value_new = self.pi.forward(ob)
 
-        kl_old_new = kl_divergence(act_logits_old, act_logits_new)
-        _entropy = entropy(act_logits_new)
+        kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
+        _entropy = self.prob_dist.entropy(act_log_stds_new)
         mean_kl = torch.mean(kl_old_new)
         mean_entropy = torch.mean(_entropy)
         pol_entpen = -mean_entropy * self.entcoeff
 
-        ac_is = ac.view(-1, 1).long()
-        act_logp_old = log_prob(ac_is, act_logits_old)
-        act_logp_new = log_prob(ac_is, act_logits_new)
+        act_logp_old = self.prob_dist.log_prob(ac, act_means_old, act_log_stds_old)
+        act_logp_new = self.prob_dist.log_prob(ac, act_means_new, act_log_stds_new)
         ratio = torch.exp(act_logp_new - act_logp_old)  # pnew / pold
         surr1 = ratio * atarg  # surrogate from conservative policy iteration
         surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg  #
         pol_surr = -torch.mean(torch.min(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
+
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
+
         total_loss = pol_surr + pol_entpen + vf_loss
         losses = [pol_surr, pol_entpen, vf_loss, mean_kl, mean_entropy]
         return total_loss, losses
@@ -144,7 +147,7 @@ class PPO(nn.Module):
                 losses = [] # list of tuples, each of which gives the loss for a minibatch
                 for batch in d.iterate_once(self.optim_batchsize):
                     self.optimizer.zero_grad()
-                    batch['ob'] = rearrange_batch_image(batch['ob'])
+                    # batch['ob'] = rearrange_batch_image(batch['ob'])
                     batch = self.convert_batch_tensor(batch)
                     total_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                     total_loss.backward()
@@ -156,7 +159,7 @@ class PPO(nn.Module):
             logger.log("Evaluating losses...")
             losses = []
             for batch in d.iterate_once(self.optim_batchsize):
-                batch['ob'] = rearrange_batch_image(batch['ob'])
+                # batch['ob'] = rearrange_batch_image(batch['ob'])
                 batch = self.convert_batch_tensor(batch)
                 _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
@@ -221,9 +224,9 @@ class PPO(nn.Module):
 
         while True:
             prevac = ac
-            _ob = rearrange_image(ob)
-            _ob = self.convert_tensor(_ob)
-            ac, vpred = pi.act(_ob) # TODO: stochastic arg required?
+            # _ob = rearrange_image(ob)
+            _ob = self.convert_tensor(ob)
+            ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
             # terminal value
@@ -243,6 +246,7 @@ class PPO(nn.Module):
             prevacs[i] = prevac
 
             ob, rew, new, _ = env.step(ac)
+            # env.render()
             rews[i] = rew
 
             cur_ep_ret += rew
@@ -254,6 +258,18 @@ class PPO(nn.Module):
                 cur_ep_len = 0
                 ob = env.reset()
             t += 1
+
+
+    def record_video(self, pi, env):
+        ob = env.reset()
+        done = True
+        while True:
+            _ob = self.convert_tensor(ob)
+            ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
+            ob, _, done, _ = env.step(ac)
+            # env.render()
+            if done:
+                return
 
 
     def add_vtarg_and_adv(this, seg, gamma, lam):
@@ -287,32 +303,32 @@ class PPO(nn.Module):
         return var
 
 
-def rearrange_image(ob):
-    return np.transpose(ob, [2, 0, 1])
-
-
-def rearrange_batch_image(ob):
-    return np.transpose(ob, [0, 3, 1, 2])
+# def rearrange_image(ob):
+#     return np.transpose(ob, [2, 0, 1])
+#
+#
+# def rearrange_batch_image(ob):
+#     return np.transpose(ob, [0, 3, 1, 2])
 
 
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]
 
 
-def kl_divergence(logits1, logits2):
-    a0 = logits1 - torch.max(logits1, dim=-1, keepdim=True)[0]
-    a1 = logits2 - torch.max(logits2, dim=-1, keepdim=True)[0]
-    ea0 = torch.exp(a0)
-    ea1 = torch.exp(a1)
-    z0 = torch.sum(ea0, dim=-1, keepdim=True)
-    z1 = torch.sum(ea1, dim=-1, keepdim=True)
-    p0 = ea0 / z0
-    return torch.sum(p0 * (a0 - torch.log(z0) - a1 + torch.log(z1)), dim=-1)
-
-
-def entropy(logits):
-    a0 = logits - torch.max(logits, dim=-1, keepdim=True)[0]
-    ea0 = torch.exp(a0)
-    z0 = torch.sum(ea0, dim=-1, keepdim=True)
-    p0 = ea0 / z0
-    return torch.sum(p0 * (torch.log(z0) - a0), dim=-1)
+# def kl_divergence(logits1, logits2):
+#     a0 = logits1 - torch.max(logits1, dim=-1, keepdim=True)[0]
+#     a1 = logits2 - torch.max(logits2, dim=-1, keepdim=True)[0]
+#     ea0 = torch.exp(a0)
+#     ea1 = torch.exp(a1)
+#     z0 = torch.sum(ea0, dim=-1, keepdim=True)
+#     z1 = torch.sum(ea1, dim=-1, keepdim=True)
+#     p0 = ea0 / z0
+#     return torch.sum(p0 * (a0 - torch.log(z0) - a1 + torch.log(z1)), dim=-1)
+#
+#
+# def entropy(logits):
+#     a0 = logits - torch.max(logits, dim=-1, keepdim=True)[0]
+#     ea0 = torch.exp(a0)
+#     z0 = torch.sum(ea0, dim=-1, keepdim=True)
+#     p0 = ea0 / z0
+#     return torch.sum(p0 * (torch.log(z0) - a0), dim=-1)

@@ -1,16 +1,17 @@
 import os
+import imageio
 import atexit
+from multiprocessing import Process, Queue
 from gym.spaces import Box
 from gym import utils
 from gym.utils import seeding
 import numpy as np
-import six
 import mujoco_py
 
 
 class PushObjectEnv(utils.EzPickle):
 
-    def __init__(self, frame_skip):
+    def __init__(self, frame_skip, max_timestep=3000):
         self.frame_skip = frame_skip
 
         model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dobot_push.xml')
@@ -22,10 +23,13 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.goal_pos = np.array([.2, .2])
+        self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
             'video.frames_per_second': int(np.round(1.0 / self.dt))
         }
+        self.t = 0
+        self.max_timestep = max_timestep
 
         pos_actuators = [actuator for actuator in self.model.actuator_names if 'position' in actuator]
         vel_actuators = [actuator for actuator in self.model.actuator_names if 'velocity' in actuator]
@@ -57,6 +61,12 @@ class PushObjectEnv(utils.EzPickle):
         self.observation_space = Box(low, high)
         self.reward_range = (-np.inf, np.inf)
         self.seed()
+
+        # set up videos
+        self.video_idx = 0
+        self.video_path = "video/video_%07d.mp4"
+        self.video_dir = self.video_path.split('/')[0]
+        os.makedirs(self.video_dir, exist_ok=True)
 
         # close on exit
         atexit.register(self.close)
@@ -101,15 +111,19 @@ class PushObjectEnv(utils.EzPickle):
             done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        self.sim
         self.do_simulation(action)
         ob = self._get_obs()
         obj_pos_xy = self.get_body_com(self.obj_name)[:2]
-        reward_dist = -np.linalg.norm(obj_pos_xy - self.goal_pos)
+        dist = np.linalg.norm(obj_pos_xy - self.goal_pos)
+        reward_dist = -0.1 * dist
         reward = reward_dist
         # reward_ctrl = -np.square(action).mean()
         # reward = reward_dist + reward_ctrl
-        done = False
+        if self.t > self.max_timestep:
+            done = True
+        else:
+            done = dist < self.dist_thresh
+        self.t += 1
         return ob, reward, done, dict()
 
 
@@ -119,6 +133,7 @@ class PushObjectEnv(utils.EzPickle):
         Returns: observation (object): the initial observation of the
             space.
         """
+        self.t = 0
         self.sim.reset()
         ob = self.reset_model()
         return ob
@@ -197,6 +212,19 @@ class PushObjectEnv(utils.EzPickle):
           self._closed = True
 
 
+    def start_record_video(self):
+        self.viewer._record_video = True
+        fps = (1 / self.viewer._time_per_render)
+        self.video_process = Process(target=save_video,
+                                     args=(self.viewer._video_queue, self.video_path % self.video_idx, fps))
+        self.video_process.start()
+
+
+    def stop_record_video(self):
+        self.viewer._video_queue.put(None)
+        self.video_process.join()
+        self.video_idx += 1
+
     # ----------------------------
 
     @property
@@ -229,9 +257,8 @@ class PushObjectEnv(utils.EzPickle):
         state.qpos[:] = qpos
         state.qvel[:] = qvel
         self.sim.set_state(state)
+        self.sim.step()
         self.sim.forward()
-        # self.sim.data.qpos = qpos
-        # self.sim.data.qvel = qvel
         # self.model._compute_subtree()  # pylint: disable=W0212
         # self.model.forward()
 
@@ -252,13 +279,24 @@ class PushObjectEnv(utils.EzPickle):
         # clip by -1, 1
         ctrl = np.clip(ctrl, -1., 1.)
         # scale position control up to joint range
-        low = self.joint_ranges[:, 0]
-        high = self.joint_ranges[:, 1]
-        pos_ctrl = low + (ctrl + 1.) / 2. * (high - low)
+        pos_ctrl = self.denormalize_pos(ctrl)
         self.sim.data.ctrl[self.actuator_ids] = pos_ctrl
         self.sim.data.ctrl[self.vel_actuator_ids] = vel_ctrl  # set velocity to zero for damping
         self.sim.step()
         self.sim.forward()
+
+    def denormalize_pos(self, pos_ctrl):
+        low = self.joint_ranges[:, 0]
+        high = self.joint_ranges[:, 1]
+        pos_ctrl = low + (pos_ctrl + 1.) / 2. * (high - low)
+        return pos_ctrl
+
+
+    def normalize_pos(self, pos):
+        low = self.joint_ranges[:, 0]
+        high = self.joint_ranges[:, 1]
+        pos = (pos - low) / (high - low) * 2. - 1.
+        return pos
 
 
     # def _get_viewer(self):
@@ -294,36 +332,54 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
-        qpos = self.data.qpos
-        qvel = self.data.qvel
+        actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
+        actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
+        # normalize pos
+        actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
         return np.concatenate([
             cube_com,
-            np.cos(qpos),
-            np.sin(qpos),
-            qpos,
-            qvel,
+            np.cos(actuator_pos),
+            np.sin(actuator_pos),
+            actuator_pos,
+            actuator_vel,
             cube_com
         ])
 
 
+# Separate Process to save video. This way visualization is
+# less slowed down.
+def save_video(queue, filename, fps):
+    writer = imageio.get_writer(filename, fps=fps)
+    while True:
+        frame = queue.get()
+        if frame is None:
+            break
+        writer.append_data(frame)
+    writer.close()
+
+
+
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
-    for i in range(3000):
-        env.step([0., 0., 0., 0., 0.])
-        env.render()
-    for i in range(3000):
-        env.step([1., 1., 1., 1., 1.])
-        env.render()
-    for i in range(3000):
-        env.step([-1., -1., -1., -1., -1.])
-        env.render()
-    # for i in range(3000):
-    #     env.step([-1., -1., -1., -1., -1.])
-    #     env.render()
-    # for i in range(1000):
-    #     env.step([0., .1, 0., 0., 0.])
-    #     env.render()
-    # for i in range(1000):
-    #     env.step([0., -.1, 0., 0., 0.])
-    #     env.render()
+    env.reset()
+    zeros = np.zeros(shape=[5])
+    ones = np.ones(shape=[5])
+    for j in range(3):
+        env.start_record_video()
+        for i in range(3000):
+            acts = np.random.normal(zeros, ones)
+            _, _, done, _ = env.step(acts)
+            env.render()
+            if done:
+                env.reset()
+        env.stop_record_video()
+        # for i in range(1500):
+        #     env.step([0., 0., 0., 0., 0.])
+        #     env.render()
+        # for i in range(1500):
+        #     env.step([1., 1., 1., 1., 1.])
+        #     env.render()
+        # for i in range(1500):
+        #     env.step([-1., -1., -1., -1., -1.])
+        #     env.render()

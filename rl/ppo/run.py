@@ -19,14 +19,13 @@ def main():
     parser.add_argument('--log', help='log directory', type=str, default='')
     args = parser.parse_args()
     logger.configure(args.log)
-    config = Config()
-    train(args.env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config)
+    config = Config(args.env)
+    train(config.env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config)
 
 
-def train(env_id, gpu, num_timesteps, seed, config):
+def train(env, gpu, num_timesteps, seed, config):
     from ppo.ppo_rl import PPO
     set_global_seeds(seed, gpu)
-    env = gym.make(env_id)
     env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"))
     env.seed(seed)
     gym.logger.setLevel(logging.WARN)
@@ -36,6 +35,7 @@ def train(env_id, gpu, num_timesteps, seed, config):
     ppo_rl = PPO(env,
                  gpu=gpu,
                  policy=config.policy,
+                 prob_dist=config.prob_dist,
                  timesteps_per_batch=config.timesteps_per_batch,
                  clip_param=config.clip_param,
                  entcoeff=config.entcoeff,

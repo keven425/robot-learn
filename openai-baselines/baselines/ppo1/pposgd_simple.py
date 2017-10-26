@@ -49,6 +49,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         ob, rew, new, _ = env.step(ac)
+        env.render()
         rews[i] = rew
 
         cur_ep_ret += rew
