@@ -25,6 +25,7 @@ class MlpPolicy(nn.Module):
             fc = nn.Linear(n_in, hid_size)
             self.fc_values.append(fc)
             n_in = hid_size
+        self.fc_values = nn.ModuleList(self.fc_values)
         self.fc_value = nn.Linear(hid_size, 1)
 
         n_in = ob_space.shape[0]
@@ -33,6 +34,7 @@ class MlpPolicy(nn.Module):
             fc = nn.Linear(n_in, hid_size)
             self.fc_acts.append(fc)
             n_in = hid_size
+        self.fc_acts = nn.ModuleList(self.fc_acts)
         self.fc_act = nn.Linear(hid_size, self.n_act)
 
         self.relu = nn.ReLU(inplace=True)
