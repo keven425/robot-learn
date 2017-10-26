@@ -3,6 +3,7 @@
 import bench
 import random
 import torch
+import pprint
 import numpy as np
 import os.path as osp
 import gym, logging
@@ -17,6 +18,8 @@ def main():
     parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
     parser.add_argument('--log', help='log directory', type=str, default='')
     args = parser.parse_args()
+    pp = pprint.PrettyPrinter(indent=1)
+    print(pp.pformat(args))
     logger.configure(args.log)
     config = Config()
     env = config.env(frame_skip=config.frame_skip,
