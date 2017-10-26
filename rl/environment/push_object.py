@@ -117,7 +117,7 @@ class PushObjectEnv(utils.EzPickle):
         ob = self._get_obs()
         obj_pos_xy = self.get_body_com(self.obj_name)[:2]
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        reward_dist = np.exp(-50. * dist_sq)
+        reward_dist = np.exp(-100. * dist_sq)
         reward = reward_dist
         # reward_ctrl = -np.square(action).mean()
         # reward = reward_dist + reward_ctrl
