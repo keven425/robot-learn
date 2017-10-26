@@ -15,6 +15,7 @@ class MlpPolicy(nn.Module):
         super(MlpPolicy, self).__init__()
         self.recurrent = False
         self.name = name
+        self.gpu = gpu
         self.ob_space = ob_space
         self.ac_space = ac_space
         self.n_act = ac_space.shape[0]
@@ -75,7 +76,7 @@ class MlpPolicy(nn.Module):
         acts = act_means
         if stochastic:
             act_stds = torch.exp(act_log_stds)
-            acts = DiagGaussianPd.sample(act_means, act_stds)
+            acts = DiagGaussianPd.sample(act_means, act_stds, gpu=self.gpu)
         value = float(value.data.cpu().numpy())
         acts = acts.data.cpu().numpy()[0]
         return acts, value

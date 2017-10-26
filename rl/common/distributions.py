@@ -28,9 +28,12 @@ class DiagGaussianPd():
 
 
   @staticmethod
-  def sample(mean, log_std):
+  def sample(mean, log_std, gpu=False):
     std = torch.exp(log_std)
     zero_mean = torch.from_numpy(np.zeros(shape=mean.size())).float()
     one_std = torch.from_numpy(np.ones(shape=mean.size())).float()
+    if gpu:
+      zero_mean = zero_mean.cuda()
+      one_std = one_std.cuda()
     normal = Variable(torch.normal(zero_mean, one_std), requires_grad=False)
     return mean + torch.mul(std, normal)
