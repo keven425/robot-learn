@@ -43,8 +43,6 @@ class MlpPolicy(nn.Module):
 
         var = np.zeros(shape=[self.n_act])
         self.act_log_stds = torch.nn.Parameter(torch.from_numpy(var).float(), requires_grad=True)
-        # if gpu:
-        #     self.act_log_stds = self.act_log_stds.cuda()
         self.register_parameter('act_log_stds', self.act_log_stds)
 
         # configure weights
