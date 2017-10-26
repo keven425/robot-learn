@@ -41,11 +41,11 @@
     </worldbody>
     <actuator>
         <!--need to define ctrllimited='false' for <position>, because velocity config will override polisition config-->
-		<position name="shoulder_position" joint="shoulder_joint" ctrllimited='false'/>
-		<position name="bigarm_position" joint="bigarm_joint" ctrllimited='false'/>
-        <position name="forearm_position" joint="forearm_joint" ctrllimited='false'/>
-        <position name="fake_joint_position" joint="fake_joint" ctrllimited='false'/>
-        <position name="chuck_position" joint="chuck_joint" ctrllimited='false'/>
+		<!--<position name="shoulder_position" joint="shoulder_joint" ctrllimited='false'/>-->
+		<!--<position name="bigarm_position" joint="bigarm_joint" ctrllimited='false'/>-->
+        <!--<position name="forearm_position" joint="forearm_joint" ctrllimited='false'/>-->
+        <!--<position name="fake_joint_position" joint="fake_joint" ctrllimited='false'/>-->
+        <!--<position name="chuck_position" joint="chuck_joint" ctrllimited='false'/>-->
         <velocity name="shoulder_velocity" joint="shoulder_joint"/>
 		<velocity name="bigarm_velocity" joint="bigarm_joint"/>
         <velocity name="forearm_velocity" joint="forearm_joint"/>
