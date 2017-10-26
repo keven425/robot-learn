@@ -8,6 +8,8 @@ from common.distributions import DiagGaussianPd
 # TODO: reuse var b/t policy and value network?
 # TODO: normalize ob?
 # TODO: use tanh instead of relu?
+# TODO: try rnn?
+# TODO: try velocity control?
 
 class MlpPolicy(nn.Module):
     recurrent = False
