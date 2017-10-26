@@ -125,6 +125,7 @@ class PushObjectEnv(utils.EzPickle):
             done = True
         else:
             done = dist_sq < self.dist_thresh
+            reward = 1.
         self.t += 1
         return ob, reward, done, dict()
 
