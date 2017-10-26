@@ -31,16 +31,12 @@ class PushObjectEnv(utils.EzPickle):
         self.t = 0
         self.max_timestep = max_timestep
 
-        pos_actuators = [actuator for actuator in self.model.actuator_names if 'position' in actuator]
         vel_actuators = [actuator for actuator in self.model.actuator_names if 'velocity' in actuator]
-        assert(len(pos_actuators) + len(vel_actuators) == len(self.model.actuator_names))
-        self.pos_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in pos_actuators]
-        self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
-        self.actuator_ids = self.pos_actuator_ids
+        self.actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
         self.act_dim = len(self.actuator_ids)
 
         # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
-        pos_actuators_joints = self.model.actuator_trnid[self.pos_actuator_ids][:, 0]
+        pos_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
         self.joint_ranges = [self.model.jnt_range[joint] for joint in pos_actuators_joints]
         self.joint_ranges = np.array(self.joint_ranges)
 
@@ -279,15 +275,10 @@ class PushObjectEnv(utils.EzPickle):
         # qpos_ctrl = [self.sim.data.qpos[addr] + qvel * self.dt for  (addr, qvel) in zip(self.joint_addrs, ctrl)]
         # print(str(qpos_ctrl))
 
-        # compute velocity control
-        n_vel_actuators = len(self.vel_actuator_ids)
-        vel_ctrl = np.zeros(shape=[n_vel_actuators])
         # clip by -1, 1
         ctrl = np.clip(ctrl, -1., 1.)
-        # scale position control up to joint range
-        pos_ctrl = self.denormalize_pos(ctrl)
-        self.sim.data.ctrl[self.actuator_ids] = pos_ctrl
-        self.sim.data.ctrl[self.vel_actuator_ids] = vel_ctrl  # set velocity to zero for damping
+        vel_ctrl = ctrl
+        self.sim.data.ctrl[self.actuator_ids] = vel_ctrl  # set velocity to zero for damping
         self.sim.step()
         self.sim.forward()
 
@@ -339,8 +330,8 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
-        actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
-        actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
+        actuator_pos = self.data.actuator_length[self.actuator_ids]
+        actuator_vel = self.data.actuator_velocity[self.actuator_ids]
         # actuator velocity can be out of [-1, 1] range, clip
         # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
@@ -374,20 +365,21 @@ if __name__ == '__main__':
     zeros = np.zeros(shape=[5])
     ones = np.ones(shape=[5])
     for j in range(3):
-        env.start_record_video()
-        for i in range(3000):
-            acts = np.random.normal(zeros, ones)
-            _, _, done, _ = env.step(acts)
+        # env.start_record_video()
+        # for i in range(3000):
+        #     acts = np.random.normal(zeros, ones)
+        #     _, _, done, _ = env.step(acts)
+        #     env.render()
+        #     if done:
+        #         env.reset()
+        # env.stop_record_video()
+
+        for i in range(1500):
+            env.step([0., 0., 0., 0., 0.])
             env.render()
-            if done:
-                env.reset()
-        env.stop_record_video()
-        # for i in range(1500):
-        #     env.step([0., 0., 0., 0., 0.])
-        #     env.render()
-        # for i in range(1500):
-        #     env.step([1., 1., 1., 1., 1.])
-        #     env.render()
-        # for i in range(1500):
-        #     env.step([-1., -1., -1., -1., -1.])
-        #     env.render()
+        for i in range(1500):
+            env.step([1., 1., 1., 1., 1.])
+            env.render()
+        for i in range(1500):
+            env.step([-1., -1., -1., -1., -1.])
+            env.render()
