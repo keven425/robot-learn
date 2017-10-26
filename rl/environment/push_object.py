@@ -22,7 +22,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_names = list(self.sim.model.joint_names)
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
-        self.goal_pos = np.array([.2, .2])
+        self.goal_pos = np.array([.15, .15])
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
