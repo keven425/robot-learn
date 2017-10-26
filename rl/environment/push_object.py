@@ -118,7 +118,6 @@ class PushObjectEnv(utils.EzPickle):
         obj_pos_xy = self.get_body_com(self.obj_name)[:2]
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
         reward_dist = np.exp(-50. * dist_sq)
-        print(reward_dist)
         reward = reward_dist
         # reward_ctrl = -np.square(action).mean()
         # reward = reward_dist + reward_ctrl
@@ -126,7 +125,8 @@ class PushObjectEnv(utils.EzPickle):
             done = True
         else:
             done = dist_sq < self.dist_thresh
-            reward = 1.
+            if done:
+                reward = 1.
         self.t += 1
         return ob, reward, done, dict()
 
