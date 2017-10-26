@@ -13,14 +13,16 @@ from config import Config
 def main():
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--env', help='environment ID', default='PongNoFrameskip-v4')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
     parser.add_argument('--log', help='log directory', type=str, default='')
     args = parser.parse_args()
     logger.configure(args.log)
-    config = Config(args.env)
-    train(config.env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config)
+    config = Config()
+    env = config.env(frame_skip=config.frame_skip,
+                     max_timestep=config.timestep_per_episode,
+                     log_dir=args.log)
+    train(env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config)
 
 
 def train(env, gpu, num_timesteps, seed, config):

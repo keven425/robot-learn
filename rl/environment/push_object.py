@@ -11,7 +11,7 @@ import mujoco_py
 
 class PushObjectEnv(utils.EzPickle):
 
-    def __init__(self, frame_skip, max_timestep=3000):
+    def __init__(self, frame_skip, max_timestep=3000, log_dir=''):
         self.frame_skip = frame_skip
 
         model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dobot_push.xml')
@@ -64,10 +64,11 @@ class PushObjectEnv(utils.EzPickle):
 
         # set up videos
         self.video_idx = 0
-        self.video_path = "video/video_%07d.mp4"
-        self.video_dir = self.video_path.split('/')[0]
+        self.video_path = os.path.join(log_dir, "video/video_%07d.mp4")
+        self.video_dir = os.path.abspath(os.path.join(self.video_path, os.pardir))
         self.recording = False
         os.makedirs(self.video_dir, exist_ok=True)
+        print('Saving videos to ' + self.video_dir)
 
         # close on exit
         atexit.register(self.close)

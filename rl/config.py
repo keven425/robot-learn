@@ -1,6 +1,6 @@
 class Config():
 
-  def __init__(self, env_id):
+  def __init__(self):
     # atari config
     # import gym
     # from ppo.cnn_policy import CnnPolicy
@@ -26,7 +26,7 @@ class Config():
     self.frame_skip = 10
     self.frame_per_episode = 3000
     self.timestep_per_episode = int(self.frame_per_episode / self.frame_skip)
-    self.env = PushObjectEnv(frame_skip=self.frame_skip, max_timestep=self.timestep_per_episode)
+    self.env = PushObjectEnv
     self.prob_dist = DiagGaussianPd
     self.num_timesteps = 1e20
     self.timesteps_per_batch = 2048
