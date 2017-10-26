@@ -58,8 +58,8 @@ class PPO(nn.Module):
         # ----------------------------------------
         self.ob_space = env.observation_space
         self.ac_space = env.action_space
-        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4)  # Construct network for new policy
-        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4)  # Network for old policy
+        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4, gpu=gpu)  # Construct network for new policy
+        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4, gpu=gpu)  # Network for old policy
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
