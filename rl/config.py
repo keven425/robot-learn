@@ -28,7 +28,7 @@ class Config():
     self.timestep_per_episode = int(self.frame_per_episode / self.frame_skip)
     self.env = PushObjectEnv(frame_skip=self.frame_skip, max_timestep=self.timestep_per_episode)
     self.prob_dist = DiagGaussianPd
-    self.num_timesteps = 1e6
+    self.num_timesteps = 1e20
     self.timesteps_per_batch = 2048
     self.policy = MlpPolicy
     self.clip_param = 0.2
@@ -39,6 +39,7 @@ class Config():
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
+    self.record_video_freq = 100
 
 def wrap_train(env):
   from common.atari_wrappers import (wrap_deepmind, FrameStack)

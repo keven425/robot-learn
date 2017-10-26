@@ -66,6 +66,7 @@ class PushObjectEnv(utils.EzPickle):
         self.video_idx = 0
         self.video_path = "video/video_%07d.mp4"
         self.video_dir = self.video_path.split('/')[0]
+        self.recording = False
         os.makedirs(self.video_dir, exist_ok=True)
 
         # close on exit
@@ -213,6 +214,10 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def start_record_video(self):
+        if self.recording:
+            print('record video in progress. calling stop before start.')
+            self.stop_record_video()
+        self.recording = True
         self.viewer._record_video = True
         fps = (1 / self.viewer._time_per_render)
         self.video_process = Process(target=save_video,
@@ -224,6 +229,7 @@ class PushObjectEnv(utils.EzPickle):
         self.viewer._video_queue.put(None)
         self.video_process.join()
         self.video_idx += 1
+        self.recording = False
 
     # ----------------------------
 
@@ -284,6 +290,7 @@ class PushObjectEnv(utils.EzPickle):
         self.sim.data.ctrl[self.vel_actuator_ids] = vel_ctrl  # set velocity to zero for damping
         self.sim.step()
         self.sim.forward()
+
 
     def denormalize_pos(self, pos_ctrl):
         low = self.joint_ranges[:, 0]

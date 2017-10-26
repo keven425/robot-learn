@@ -30,7 +30,8 @@ class PPO(nn.Module):
                  max_seconds=0,
                  callback=None,  # you can do anything in the callback, since it takes locals(), globals()
                  adam_epsilon=1e-5,
-                 schedule='constant'  # annealing for stepsize parameters (epsilon and adam)
+                 schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
+                 record_video_freq=100
                  ):
         super(PPO, self).__init__()
         self.env = env
@@ -51,13 +52,14 @@ class PPO(nn.Module):
         self.callback = callback
         self.adam_epsilon = adam_epsilon
         self.schedule = schedule
+        self.record_video_freq = record_video_freq
 
         # Setup losses and stuff
         # ----------------------------------------
         self.ob_space = env.observation_space
         self.ac_space = env.action_space
-        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=2)  # Construct network for new policy
-        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=2)  # Network for old policy
+        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4)  # Construct network for new policy
+        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4)  # Network for old policy
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
@@ -184,6 +186,9 @@ class PPO(nn.Module):
             logger.record_tabular("TimeElapsed", time.time() - tstart)
             logger.dump_tabular()
 
+            if iters_so_far % self.record_video_freq == 0:
+                self.record_video(self.pi, self.env)
+
 
     def get_lr_multiplier(self, timesteps_so_far):
         if self.schedule == 'constant':
@@ -262,14 +267,16 @@ class PPO(nn.Module):
 
     def record_video(self, pi, env):
         ob = env.reset()
-        done = True
-        while True:
+        done = False
+        env.env.start_record_video()
+        while not done:
             _ob = self.convert_tensor(ob)
             ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
             ob, _, done, _ = env.step(ac)
-            # env.render()
-            if done:
-                return
+            env.render()
+        env.env.stop_record_video()
+        env.reset()
+
 
 
     def add_vtarg_and_adv(this, seg, gamma, lam):

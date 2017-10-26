@@ -26,7 +26,7 @@ def main():
 def train(env, gpu, num_timesteps, seed, config):
     from ppo.ppo_rl import PPO
     set_global_seeds(seed, gpu)
-    env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"))
+    env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"), allow_early_resets=True)
     env.seed(seed)
     gym.logger.setLevel(logging.WARN)
     if hasattr(config, 'wrap_env_fn'):
@@ -45,7 +45,8 @@ def train(env, gpu, num_timesteps, seed, config):
                  gamma=config.gamma,
                  lam=config.lam,
                  max_timesteps=num_timesteps,
-                 schedule=config.schedule)
+                 schedule=config.schedule,
+                 record_video_freq=config.record_video_freq)
     ppo_rl.run()
     env.close()
 
