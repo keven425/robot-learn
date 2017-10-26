@@ -116,15 +116,15 @@ class PushObjectEnv(utils.EzPickle):
         self.do_simulation(action)
         ob = self._get_obs()
         obj_pos_xy = self.get_body_com(self.obj_name)[:2]
-        dist = np.linalg.norm(obj_pos_xy - self.goal_pos)
-        reward_dist = -0.1 * dist
+        dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
+        reward_dist = np.exp(-50. * dist_sq)
         reward = reward_dist
         # reward_ctrl = -np.square(action).mean()
         # reward = reward_dist + reward_ctrl
         if self.t > self.max_timestep:
             done = True
         else:
-            done = dist < self.dist_thresh
+            done = dist_sq < self.dist_thresh
         self.t += 1
         return ob, reward, done, dict()
 
