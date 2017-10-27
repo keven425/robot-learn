@@ -41,6 +41,8 @@ def train(env, gpu, num_timesteps, seed, config):
                  gpu=gpu,
                  policy=config.policy,
                  prob_dist=config.prob_dist,
+                 num_hid_layers=config.num_hid_layers,
+                 hid_size=config.hid_size,
                  timesteps_per_batch=config.timesteps_per_batch,
                  clip_param=config.clip_param,
                  entcoeff=config.entcoeff,

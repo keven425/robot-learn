@@ -13,9 +13,11 @@ from collections import deque
 class PPO(nn.Module):
     def __init__(self,
                  env,
-                 prob_dist,
                  gpu,
                  policy,
+                 prob_dist,
+                 num_hid_layers,
+                 hid_size,
                  timesteps_per_batch,  # timesteps per actor per update
                  clip_param,  # clipping parameter epsilon, entropy coeff
                  entcoeff,
@@ -58,8 +60,8 @@ class PPO(nn.Module):
         # ----------------------------------------
         self.ob_space = env.observation_space
         self.ac_space = env.action_space
-        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4, gpu=gpu)  # Construct network for new policy
-        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=64, num_hid_layers=4, gpu=gpu)  # Network for old policy
+        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)  # Construct network for new policy
+        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)  # Network for old policy
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()

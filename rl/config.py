@@ -28,6 +28,8 @@ class Config():
     self.timestep_per_episode = int(self.frame_per_episode / self.frame_skip)
     self.env = PushObjectEnv
     self.prob_dist = DiagGaussianPd
+    self.num_hid_layers = 4
+    self.hid_size = 64
     self.num_timesteps = 1e20
     self.timesteps_per_batch = 2048
     self.policy = MlpPolicy
