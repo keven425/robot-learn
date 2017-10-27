@@ -65,7 +65,6 @@ class MlpPolicy(nn.Module):
 
 
     def forward(self, x):
-        self.train(True)
         _x = x
         for fc, bn in zip(self.fc_acts, self.fc_a_bns):
             _x = self.relu(bn(fc(_x)))
@@ -81,7 +80,6 @@ class MlpPolicy(nn.Module):
 
 
     def act(self, ob, stochastic=True):
-        self.train(False)
         act_means, act_log_stds, value = self.forward(ob[None])
         acts = act_means
         if stochastic:

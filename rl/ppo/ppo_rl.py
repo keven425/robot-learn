@@ -83,6 +83,8 @@ class PPO(nn.Module):
     '''
     def forward(self, ob, ac, atarg, _return, lr_mult):
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
+        self.oldpi.train(True)
+        self.pi.train(True)
         act_means_old, act_log_stds_old, value_old = self.oldpi.forward(ob)
         act_means_new, act_log_stds_new, value_new = self.pi.forward(ob)
 
@@ -248,6 +250,7 @@ class PPO(nn.Module):
             prevac = ac
             # _ob = rearrange_image(ob)
             _ob = self.convert_tensor(ob)
+            pi.train(False)
             ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
@@ -288,7 +291,8 @@ class PPO(nn.Module):
         env.env.start_record_video()
         while not done:
             _ob = self.convert_tensor(ob)
-            ac, vpred = pi.act(_ob, stochastic=False)
+            pi.train(False)
+            ac, vpred = pi.act(_ob, stochastic=False) # TODO: stochastic arg required?
             ob, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
