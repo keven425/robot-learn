@@ -5,7 +5,6 @@ from torch.autograd import Variable
 from ppo.adam_var_lr import AdamVariableLr
 import numpy as np
 from common import logger, Dataset, explained_variance, fmt_row, zipsame
-from common.pytorch_util import log_prob
 import time
 from collections import deque
 
@@ -82,11 +81,19 @@ class PPO(nn.Module):
     lrmult: learning rate multiplier, updated with schedule    
     '''
     def forward(self, ob, ac, atarg, _return, lr_mult):
+        self.debug_print(ob, 'ob')
+        self.debug_print(ac, 'ac')
+        self.debug_print(atarg, 'atarg')
+        self.debug_print(_return, '_return')
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
-        self.oldpi.train(True)
-        self.pi.train(True)
         act_means_old, act_log_stds_old, value_old = self.oldpi.forward(ob)
         act_means_new, act_log_stds_new, value_new = self.pi.forward(ob)
+        self.debug_print(act_means_old, 'act_logp_old')
+        self.debug_print(act_means_new, 'act_means_new')
+        self.debug_print(act_log_stds_old, 'act_log_stds_old')
+        self.debug_print(act_log_stds_new, 'act_log_stds_new')
+        self.debug_print(value_old, 'value_old')
+        self.debug_print(value_new, 'value_new')
 
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
@@ -97,6 +104,8 @@ class PPO(nn.Module):
 
         act_logp_old = self.prob_dist.log_prob(ac, act_means_old, act_log_stds_old)
         act_logp_new = self.prob_dist.log_prob(ac, act_means_new, act_log_stds_new)
+        self.debug_print(act_logp_old, 'act_logp_old')
+        self.debug_print(act_logp_new, 'act_logp_new')
         log_ratio = act_logp_new - act_logp_old
         log_ratio = torch.clamp(log_ratio, max=15)
         ratio = torch.exp(log_ratio)  # pnew / pold
@@ -112,10 +121,14 @@ class PPO(nn.Module):
         return total_loss, losses
 
 
-    def run(self):
-        # switch to train mode
-        self.train()
+    def debug_print(self, var, name):
+        print()
+        print(name + ': min: %f\tmax: %f\tmean: %f' % (
+            var.min().data.cpu().numpy(),
+            var.max().data.cpu().numpy(),
+            var.mean().data.cpu().numpy()))
 
+    def run(self):
         # Prepare for rollouts
         seg_generator = self.traj_segment_generator(self.pi, self.env, self.timesteps_per_batch)
         episodes_so_far = 0
@@ -165,6 +178,8 @@ class PPO(nn.Module):
                     self.optimizer.zero_grad()
                     # batch['ob'] = rearrange_batch_image(batch['ob'])
                     batch = self.convert_batch_tensor(batch)
+                    self.oldpi.train(True)
+                    self.pi.train(True)
                     total_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                     total_loss.backward()
                     self.optimizer.step(_step_size=self.optim_stepsize * cur_lrmult)
@@ -177,6 +192,8 @@ class PPO(nn.Module):
             for batch in d.iterate_once(self.optim_batchsize):
                 # batch['ob'] = rearrange_batch_image(batch['ob'])
                 batch = self.convert_batch_tensor(batch)
+                self.oldpi.train(False)
+                self.pi.train(False)
                 _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
@@ -206,6 +223,7 @@ class PPO(nn.Module):
             logger.dump_tabular()
 
             if iters_so_far % self.record_video_freq == 0:
+                self.pi.train(False)
                 self.record_video(self.pi, self.env)
 
 
@@ -291,7 +309,6 @@ class PPO(nn.Module):
         env.env.start_record_video()
         while not done:
             _ob = self.convert_tensor(ob)
-            pi.train(False)
             ac, vpred = pi.act(_ob, stochastic=False) # TODO: stochastic arg required?
             ob, _, done, _ = env.step(ac)
             env.render()
