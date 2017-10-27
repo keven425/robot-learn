@@ -33,9 +33,9 @@ class Config():
     self.policy = MlpPolicy
     self.clip_param = 0.2
     self.entcoeff = 0.0
-    self.optim_epochs = 10
-    self.optim_stepsize = 3e-4
-    self.optim_batchsize = 64
+    self.optim_epochs = 20
+    self.optim_stepsize = 4e-4
+    self.optim_batchsize = 512
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
