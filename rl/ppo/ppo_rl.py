@@ -122,8 +122,8 @@ class PPO(nn.Module):
 
 
     def debug_print(self, var, name):
-        print()
-        print(name + ': min: %f\tmax: %f\tmean: %f' % (
+        print('name: ' + name + '\t', end='')
+        print('min: %f\tmax: %f\tmean: %f' % (
             var.min().data.cpu().numpy(),
             var.max().data.cpu().numpy(),
             var.mean().data.cpu().numpy()))
