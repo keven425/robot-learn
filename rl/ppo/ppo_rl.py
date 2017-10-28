@@ -88,7 +88,9 @@ class PPO(nn.Module):
 
         act_logp_old = self.prob_dist.log_prob(ac, act_means_old, act_log_stds_old)
         act_logp_new = self.prob_dist.log_prob(ac, act_means_new, act_log_stds_new)
-        ratio = torch.exp(act_logp_new - act_logp_old)  # pnew / pold
+        log_ratio = act_logp_new - act_logp_old
+        log_ratio = torch.clamp(log_ratio, max=15)
+        ratio = torch.exp(log_ratio)  # pnew / pold
         surr1 = ratio * atarg  # surrogate from conservative policy iteration
         surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg  #
         pol_surr = -torch.mean(torch.min(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)

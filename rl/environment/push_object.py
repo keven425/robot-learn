@@ -117,7 +117,7 @@ class PushObjectEnv(utils.EzPickle):
         ob = self._get_obs()
         obj_pos_xy = self.get_body_com(self.obj_name)[:2]
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        reward_dist = 0.1 * (np.exp(-100. * dist_sq) - 1.)
+        reward_dist = 0.1 * (np.exp(-50. * dist_sq) - 1.)
         reward = reward_dist
         # reward_ctrl = -np.square(action).mean()
         # reward = reward_dist + reward_ctrl
@@ -341,6 +341,8 @@ class PushObjectEnv(utils.EzPickle):
     def _get_obs(self):
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
+        # actuator velocity can be out of [-1, 1] range, clip
+        actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
@@ -349,8 +351,7 @@ class PushObjectEnv(utils.EzPickle):
             np.cos(actuator_pos),
             np.sin(actuator_pos),
             actuator_pos,
-            actuator_vel,
-            cube_com
+            actuator_vel
         ])
 
 

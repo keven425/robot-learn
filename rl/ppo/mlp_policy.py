@@ -60,7 +60,7 @@ class MlpPolicy(nn.Module):
         _x = x
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
-        act_means = self.fc_act(_x)
+        act_means = self.tanh(self.fc_act(_x))
 
         _x = x
         for fc in self.fc_values:
