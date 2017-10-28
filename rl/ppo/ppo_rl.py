@@ -86,9 +86,11 @@ class PPO(nn.Module):
         self.debug_print(atarg, 'atarg')
         self.debug_print(_return, '_return')
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
+        print('oldpi.forward')
         act_means_old, act_log_stds_old, value_old = self.oldpi.forward(ob)
+        print('pi.forward')
         act_means_new, act_log_stds_new, value_new = self.pi.forward(ob)
-        self.debug_print(act_means_old, 'act_logp_old')
+        self.debug_print(act_means_old, 'act_means_old')
         self.debug_print(act_means_new, 'act_means_new')
         self.debug_print(act_log_stds_old, 'act_log_stds_old')
         self.debug_print(act_log_stds_new, 'act_log_stds_new')
@@ -101,20 +103,26 @@ class PPO(nn.Module):
         kl_loss = mean_kl * self.beta
         mean_entropy = torch.mean(_entropy)
         pol_entpen = -mean_entropy * self.entcoeff
+        self.debug_print(pol_entpen, 'pol_entpen')
 
         act_logp_old = self.prob_dist.log_prob(ac, act_means_old, act_log_stds_old)
         act_logp_new = self.prob_dist.log_prob(ac, act_means_new, act_log_stds_new)
         self.debug_print(act_logp_old, 'act_logp_old')
         self.debug_print(act_logp_new, 'act_logp_new')
         log_ratio = act_logp_new - act_logp_old
-        log_ratio = torch.clamp(log_ratio, max=15)
+        log_ratio = torch.clamp(log_ratio, max=15) # clip for numerical stability
         ratio = torch.exp(log_ratio)  # pnew / pold
+        self.debug_print(ratio, 'ratio')
         surr1 = ratio * atarg  # surrogate from conservative policy iteration
-        surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg  #
+        self.debug_print(surr1, 'surr1')
+        surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * atarg
+        self.debug_print(surr2, 'surr2')
         pol_surr = -torch.mean(torch.min(surr1, surr2))  # PPO's pessimistic surrogate (L^CLIP)
+        self.debug_print(pol_surr, 'pol_surr')
 
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
+        self.debug_print(vf_loss, 'vf_loss')
 
         total_loss = pol_surr + pol_entpen + vf_loss + kl_loss
         losses = [pol_surr, pol_entpen, vf_loss, mean_kl, mean_entropy]
@@ -123,10 +131,15 @@ class PPO(nn.Module):
 
     def debug_print(self, var, name):
         print('name: ' + name + '\t', end='')
+        min = var.min().data.cpu().numpy()
+        max = var.max().data.cpu().numpy()
+        if max == np.inf or min == -np.inf:
+            pass
+        mean = var.mean().data.cpu().numpy()
         print('min: %f\tmax: %f\tmean: %f' % (
-            var.min().data.cpu().numpy(),
-            var.max().data.cpu().numpy(),
-            var.mean().data.cpu().numpy()))
+            min,
+            max,
+            mean))
 
     def run(self):
         # Prepare for rollouts

@@ -90,6 +90,14 @@ class MlpPolicy(nn.Module):
         return acts, value
 
 
+    def debug_print(self, var, name):
+        print('name: ' + name + '\t', end='')
+        print('min: %f\tmax: %f\tmean: %f' % (
+            var.min().data.cpu().numpy(),
+            var.max().data.cpu().numpy(),
+            var.mean().data.cpu().numpy()))
+
+
 def init_weights_fc(m, std=1.):
     n = m.in_features + m.out_features
     m.weight.data.normal_(0, std * math.sqrt(2. / n))
