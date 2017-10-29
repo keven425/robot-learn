@@ -38,7 +38,7 @@ class Config():
     self.optim_epochs = 20
     self.optim_stepsize = 4e-4
     self.optim_batchsize = 512
-    self.gamma = 0.98
+    self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
     self.record_video_freq = 100
