@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 import numpy as np
 from common.distributions import DiagGaussianPd
 
@@ -15,12 +16,15 @@ class MlpPolicy(nn.Module):
     recurrent = False
     def __init__(self, name, ob_space, ac_space, hid_size, num_hid_layers, gpu=False):
         super(MlpPolicy, self).__init__()
-        self.recurrent = False
+        self.recurrent = True
         self.name = name
         self.gpu = gpu
         self.ob_space = ob_space
         self.ac_space = ac_space
         self.n_act = ac_space.shape[0]
+        self.hid_size = hid_size
+        self.lstm_value = nn.LSTMCell(hid_size, hid_size)
+        self.lstm_act = nn.LSTMCell(hid_size, hid_size)
 
         n_in = ob_space.shape[0]
         self.fc_values = []
@@ -57,22 +61,47 @@ class MlpPolicy(nn.Module):
 
 
     def forward(self, x):
+        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(x, self.hidden_value, self.hidden_act)
+        return act_means, act_log_stds, value
+
+
+    def forward_step(self, x, hidden_value, hidden_act):
         _x = x
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
-        act_means = self.tanh(self.fc_act(_x))
+        h_act, c_act = self.lstm_value(_x, hidden_value)
+        act_means = self.tanh(self.fc_act(h_act))
 
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
-        value = self.fc_value(_x).view(-1) # flatten
+        h_value, c_value = self.lstm_value(_x, hidden_act)
+        value = self.fc_value(h_value).view(-1) # flatten
 
         act_log_stds = act_means * 0. + self.act_log_stds
-        return act_means, act_log_stds, value
+        return act_means, act_log_stds, value, (h_act, c_act), (h_value, c_value)
+
+
+    # def forward(self, x):
+    #     n_timestep = x.size(0)
+    #     batch_size = x.size(1)
+    #     hidden_value = Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False)
+    #     hidden_act = Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False)
+    #     for i in range(n_timestep):
+    #         act_means, act_log_stds, value, hidden_act, hidden_value = self.forward(x, hidden_value, hidden_act)
+    #     return act_means, act_log_stds, value
+
+
+    # reset hidden state for new roll out
+    def reset(self, batch_size=1):
+        self.hidden_act = (Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False),
+                           Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False))
+        self.hidden_value = (Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False),
+                             Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False))
 
 
     def act(self, ob, stochastic=True):
-        act_means, act_log_stds, value = self.forward(ob[None])
+        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(ob[None], self.hidden_value, self.hidden_act)
         acts = act_means
         if stochastic:
             act_stds = torch.exp(act_log_stds)
