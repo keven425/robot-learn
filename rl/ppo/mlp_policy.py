@@ -26,6 +26,10 @@ class MlpPolicy(nn.Module):
         self.lstm_value = nn.LSTMCell(hid_size, hid_size)
         self.lstm_act = nn.LSTMCell(hid_size, hid_size)
 
+        if self.gpu:
+            self.lstm_value.cuda()
+            self.lstm_act.cuda()
+
         n_in = ob_space.shape[0]
         self.fc_values = []
         for i in range(num_hid_layers):
