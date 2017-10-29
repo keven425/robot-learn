@@ -132,9 +132,9 @@ class PushObjectEnv(utils.EzPickle):
         # reward_ctrl = -np.square(action).mean()
         # reward = rew_obj_goal + reward_ctrl
         done = False
-        if self.t > self.max_timestep:
-            done = True
         self.t += 1
+        if self.t >= self.max_timestep:
+            done = True
         return ob, reward, done, dict()
 
 

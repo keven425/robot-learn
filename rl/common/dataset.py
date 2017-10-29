@@ -30,8 +30,20 @@ class Dataset(object):
 
         data_map = dict()
         for key in self.data_map:
-            data_map[key] = self.data_map[key][cur_id:cur_id+cur_batch_size]
+            batch = self.get_batch(cur_batch_size, cur_id, key)
+            data_map[key] = batch
         return data_map
+
+    # def get_sequence(self, cur_batch_size, cur_id, key):
+    #     seqs = []
+    #     for id in range(cur_id, cur_id + self.recur_timestep):
+    #         seq = self.data_map[key][id:id + cur_batch_size]
+    #         seqs.append(seq)
+    #     seqs = np.array(seqs)
+    #     return seqs
+
+    def get_batch(self, cur_batch_size, cur_id, key):
+        return self.data_map[key][cur_id:cur_id + cur_batch_size]
 
     def iterate_once(self, batch_size):
         if self.enable_shuffle: self.shuffle()
