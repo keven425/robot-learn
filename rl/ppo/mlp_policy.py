@@ -23,8 +23,8 @@ class MlpPolicy(nn.Module):
         self.ac_space = ac_space
         self.n_act = ac_space.shape[0]
         self.hid_size = hid_size
-        self.lstm_value = nn.LSTMCell(hid_size, hid_size).cuda()
-        self.lstm_act = nn.LSTMCell(hid_size, hid_size).cuda()
+        self.lstm_value = nn.LSTMCell(hid_size, hid_size)
+        self.lstm_act = nn.LSTMCell(hid_size, hid_size)
 
         n_in = ob_space.shape[0]
         self.fc_values = []
@@ -101,8 +101,8 @@ class MlpPolicy(nn.Module):
 
     def init_hidden(self, batch_size):
         var = Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False)
-        # if self.gpu:
-        var = var.cuda()
+        if self.gpu:
+            var = var.cuda()
         return var
 
     def act(self, ob, stochastic=True):
