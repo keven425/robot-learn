@@ -102,7 +102,7 @@ class MlpPolicy(nn.Module):
     def init_hidden(self, batch_size):
         var = Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False)
         # if self.gpu:
-        var.cuda()
+        var = var.cuda()
         return var
 
     def act(self, ob, stochastic=True):
