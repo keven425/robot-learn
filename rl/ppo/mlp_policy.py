@@ -38,7 +38,7 @@ class MlpPolicy(nn.Module):
             self.fc_acts.append(fc)
             n_in = hid_size
         self.fc_acts = nn.ModuleList(self.fc_acts)
-        self.fc_act = nn.Linear(hid_size, self.n_act)
+        self.fc_act = nn.Linear(hid_size, self.n_act * 2)
 
         self.relu = nn.ReLU(inplace=True)
         self.tanh = nn.Tanh()
@@ -60,14 +60,15 @@ class MlpPolicy(nn.Module):
         _x = x
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
-        act_means = self.tanh(self.fc_act(_x))
+        act_mean_stds = self.fc_act(_x)
 
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
 
-        act_log_stds = act_means * 0. + self.act_log_stds
+        act_means = self.tanh(act_mean_stds[:, :self.n_act])
+        act_log_stds = act_mean_stds[:, self.n_act:]
         return act_means, act_log_stds, value
 
 
