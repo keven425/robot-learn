@@ -26,10 +26,6 @@ class MlpPolicy(nn.Module):
         self.lstm_value = nn.LSTMCell(hid_size, hid_size)
         self.lstm_act = nn.LSTMCell(hid_size, hid_size)
 
-        if self.gpu:
-            self.lstm_value.cuda()
-            self.lstm_act.cuda()
-
         n_in = ob_space.shape[0]
         self.fc_values = []
         for i in range(num_hid_layers):
@@ -98,11 +94,16 @@ class MlpPolicy(nn.Module):
 
     # reset hidden state for new roll out
     def reset(self, batch_size=1):
-        self.hidden_act = (Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False),
-                           Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False))
-        self.hidden_value = (Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False),
-                             Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False))
+        self.hidden_act = (self.init_hidden(batch_size),
+                           self.init_hidden(batch_size))
+        self.hidden_value = (self.init_hidden(batch_size),
+                             self.init_hidden(batch_size))
 
+    def init_hidden(self, batch_size):
+        var = Variable(torch.zeros(batch_size, self.hid_size), requires_grad=False)
+        if self.gpu:
+            var.cuda()
+        return var
 
     def act(self, ob, stochastic=True):
         act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(ob[None], self.hidden_value, self.hidden_act)
