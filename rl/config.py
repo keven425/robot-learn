@@ -36,7 +36,7 @@ class Config():
     self.policy = MlpPolicy
     self.clip_param = 0.2
     self.entcoeff = 0.0
-    self.optim_epochs = 20
+    self.optim_epochs = 10
     self.optim_stepsize = 4e-4
     self.optim_batchsize = self.timestep_per_episode
     self.gamma = 0.99
