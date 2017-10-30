@@ -8,7 +8,7 @@ class DiagGaussianPd():
   def log_prob(x, mean, log_std):
     std = torch.exp(log_std)
     term1 = 0.5 * torch.sum(torch.pow((x - mean) / std, 2), dim=-1)
-    term2 = 0.5 * np.log(2.0 * np.pi) * x.size(-1)
+    term2 = 0.5 * np.log(2.0 * np.pi) * float(x.size(-1))
     term3 = torch.sum(log_std, dim=-1)
     return -(term1 + term2 + term3)
 

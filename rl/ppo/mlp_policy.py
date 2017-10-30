@@ -67,7 +67,7 @@ class MlpPolicy(nn.Module):
             _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
 
-        act_means = self.tanh(act_mean_stds[:, :self.n_act])
+        act_means = act_mean_stds[:, :self.n_act]
         act_log_stds = act_mean_stds[:, self.n_act:]
         return act_means, act_log_stds, value
 
