@@ -66,9 +66,14 @@ class MlpPolicy(nn.Module):
 
     def forward(self, x):
         _x = x
-        for fc, bn in zip(self.fc_acts, self.fc_a_bns):
-            _x = self.relu(bn(fc(_x)))
+        for i, (fc, bn) in enumerate(zip(self.fc_acts, self.fc_a_bns)):
+            _bn = bn(fc(_x))
+            # self.debug_print(bn.weight, 'bn_acts_w%d' % i)
+            # self.debug_print(bn.bias, 'bn_acts_b%d' % i)
+            # self.debug_print(_bn, 'fc_acts%d' % i)
+            _x = self.relu(_bn)
         act_means = self.tanh(self.fc_act(_x))
+        # self.debug_print(act_mean_stds, 'fc_act_final')
 
         _x = x
         for fc, bn in zip(self.fc_values, self.fc_v_bns):
