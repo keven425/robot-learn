@@ -23,21 +23,13 @@ class MlpPolicy(nn.Module):
         self.n_act = ac_space.shape[0]
 
         n_in = ob_space.shape[0]
-        self.fc_values = []
+        self.fcs = []
         for i in range(num_hid_layers):
             fc = nn.Linear(n_in, hid_size)
-            self.fc_values.append(fc)
+            self.fcs.append(fc)
             n_in = hid_size
-        self.fc_values = nn.ModuleList(self.fc_values)
+        self.fcs = nn.ModuleList(self.fcs)
         self.fc_value = nn.Linear(hid_size, 1)
-
-        n_in = ob_space.shape[0]
-        self.fc_acts = []
-        for i in range(num_hid_layers):
-            fc = nn.Linear(n_in, hid_size)
-            self.fc_acts.append(fc)
-            n_in = hid_size
-        self.fc_acts = nn.ModuleList(self.fc_acts)
         self.fc_act = nn.Linear(hid_size, self.n_act)
 
         self.relu = nn.ReLU(inplace=True)
@@ -50,21 +42,15 @@ class MlpPolicy(nn.Module):
         # configure weights
         init_weights_fc(self.fc_value, 1.0)
         init_weights_fc(self.fc_act, 0.01)
-        for fc in self.fc_values:
-            init_weights_fc(fc, 1.0)
-        for fc in self.fc_acts:
+        for fc in self.fcs:
             init_weights_fc(fc, 1.0)
 
 
     def forward(self, x):
         _x = x
-        for fc in self.fc_acts:
+        for fc in self.fcs:
             _x = self.tanh(fc(_x))
         act_means = self.tanh(self.fc_act(_x))
-
-        _x = x
-        for fc in self.fc_values:
-            _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
 
         act_log_stds = act_means * 0. + self.act_log_stds
