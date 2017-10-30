@@ -1,0 +1,3 @@
+std_fc: output std as final layer of nn: entropy stays high around 8. doesn't work
+rnn: try reducing num layers
+no_vel_in_clamp: entropy decreases to -40
