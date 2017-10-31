@@ -6,6 +6,15 @@ ppo_push_obj_ent_reg0.001: promising. entropy decreased to ~4 at 90th video
 batchnorm: entropy decreased to -40
 
 
+output std as separate var might be better
+use 2/3 layer
+fix std during evaluation
+make critic learn 10x faster actor
+use running mean for observation
+
+deep mind paper: emergence of locomotion paper
+paper: deep rl that matters
+
 
 Questions:
  * 3000 simulation step / 10 skipframe = 300 timestep
@@ -13,5 +22,4 @@ Questions:
  * use var to directly output stdev?
  * how is std dev variable updated?
  * performance degrades. e.g. ppo_push_obj_rew_a100. perf works around 30th video. ~1 stdev
- *
  * RNN?
