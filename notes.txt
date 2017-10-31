@@ -3,9 +3,9 @@ Ideas:
  * batchnorm: encourage exploration
  * 2 layer: encourage exploration
  * 3 layer use ent reg
- * std_fc: promising. entropy keeps rising
- * make critic learn 10x faster actor
+ * std_fc: promising. entropy keeps rising. use 3 layer
  * use running mean for observation
+ * make critic learn 10x faster actor
 
 
 Papers:
