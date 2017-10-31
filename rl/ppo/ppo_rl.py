@@ -275,7 +275,7 @@ class PPO(nn.Module):
         env.env.start_record_video()
         while not done:
             _ob = self.convert_tensor(ob)
-            ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
+            ac, vpred = pi.act(_ob, stochastic=False)
             ob, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
