@@ -1,3 +1,17 @@
 std_fc: output std as final layer of nn: entropy stays high around 8. doesn't work
-rnn: try reducing num layers
 no_vel_in_clamp: entropy decreases to -40
+two layer: entropy increases slightly to 10
+rnn: 2 layer not learning
+ppo_push_obj_ent_reg0.001: promising. entropy decreased to ~4 at 90th video
+batchnorm: entropy decreased to -40
+
+
+
+Questions:
+ * 3000 simulation step / 10 skipframe = 300 timestep
+ * 4 layer
+ * use var to directly output stdev?
+ * how is std dev variable updated?
+ * performance degrades. e.g. ppo_push_obj_rew_a100. perf works around 30th video. ~1 stdev
+ *
+ * RNN?
