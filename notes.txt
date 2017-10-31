@@ -1,13 +1,12 @@
-fix std during evaluation
+Ideas:
+ * try set initial stdev to higher
+ * batchnorm: encourage exploration
+ * 2 layer: encourage exploration
+ * 3 layer use ent reg
+ * std_fc: promising. entropy keeps rising
+ * make critic learn 10x faster actor
+ * use running mean for observation
 
-
-try set initial stdev to higher
-batchnorm: encourage exploration
-2 layer: encourage exploration
-3 layer use ent reg
-std_fc: promising. entropy keeps rising
-make critic learn 10x faster actor
-use running mean for observation
 
 Papers:
  * deep mind paper: emergence of locomotion paper
