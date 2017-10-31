@@ -75,8 +75,7 @@ class MlpPolicy(nn.Module):
         act_means, act_log_stds, value = self.forward(ob[None])
         acts = act_means
         if stochastic:
-            act_stds = torch.exp(act_log_stds)
-            acts = DiagGaussianPd.sample(act_means, act_stds, gpu=self.gpu)
+            acts = DiagGaussianPd.sample(act_means, act_log_stds, gpu=self.gpu)
         value = float(value.data.cpu().numpy())
         acts = acts.data.cpu().numpy()[0]
         return acts, value
