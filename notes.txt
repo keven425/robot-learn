@@ -1,19 +1,17 @@
-std_fc: output std as final layer of nn: entropy stays high around 8. doesn't work
-no_vel_in_clamp: entropy decreases to -40
-two layer: entropy increases slightly to 10
-rnn: 2 layer not learning
-ppo_push_obj_ent_reg0.001: promising. entropy decreased to ~4 at 90th video
-batchnorm: entropy decreased to -40
-
-
-output std as separate var might be better
-use 2/3 layer
 fix std during evaluation
+
+
+try set initial stdev to higher
+batchnorm: encourage exploration
+2 layer: encourage exploration
+3 layer use ent reg
+std_fc: promising. entropy keeps rising
 make critic learn 10x faster actor
 use running mean for observation
 
-deep mind paper: emergence of locomotion paper
-paper: deep rl that matters
+Papers:
+ * deep mind paper: emergence of locomotion paper
+ * paper: deep rl that matters
 
 
 Questions:
