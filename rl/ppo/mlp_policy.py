@@ -63,9 +63,9 @@ class MlpPolicy(nn.Module):
         ob_mean, ob_std = self.ob_rms.get_mean_std()
         ob_mean = Variable(torch.from_numpy(ob_mean).float(), requires_grad=False)
         ob_std = Variable(torch.from_numpy(ob_std).float(), requires_grad=False)
-        # if self.gpu:
-        #     ob_mean = ob_mean.cuda()
-        #     ob_std = ob_std.cuda()
+        if self.gpu:
+            ob_mean = ob_mean.cuda()
+            ob_std = ob_std.cuda()
         x = torch.clamp((x - ob_mean) / ob_std, -5.0, 5.0)
 
         _x = x
