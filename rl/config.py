@@ -34,7 +34,7 @@ class Config():
     self.timesteps_per_batch = 2048
     self.policy = MlpPolicy
     self.clip_param = 0.2
-    self.entcoeff = 0.0
+    self.entcoeff = 0.001
     self.optim_epochs = 20
     self.optim_stepsize = 4e-4
     self.optim_batchsize = 512
