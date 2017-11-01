@@ -1,8 +1,10 @@
 import math
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 import numpy as np
 from common.distributions import DiagGaussianPd
+from common.running_mean_std import RunningMeanStd
 
 
 # TODO: reuse var b/t policy and value network?
@@ -21,6 +23,7 @@ class MlpPolicy(nn.Module):
         self.ob_space = ob_space
         self.ac_space = ac_space
         self.n_act = ac_space.shape[0]
+        self.ob_rms = RunningMeanStd(ob_space.shape)
 
         n_in = ob_space.shape[0]
         self.fc_values = []
@@ -57,6 +60,14 @@ class MlpPolicy(nn.Module):
 
 
     def forward(self, x):
+        ob_mean, ob_std = self.ob_rms.get_mean_std()
+        ob_mean = Variable(torch.from_numpy(ob_mean).float(), requires_grad=False)
+        ob_std = Variable(torch.from_numpy(ob_std).float(), requires_grad=False)
+        # if self.gpu:
+        #     ob_mean = ob_mean.cuda()
+        #     ob_std = ob_std.cuda()
+        x = torch.clamp((x - ob_mean) / ob_std, -5.0, 5.0)
+
         _x = x
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))

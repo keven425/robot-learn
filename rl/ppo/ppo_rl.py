@@ -141,7 +141,7 @@ class PPO(nn.Module):
             optim_batchsize = self.optim_batchsize or ob.shape[0]
 
             # update running mean/std for policy
-            # if hasattr(self.pi, "ob_rms"): self.pi.ob_rms.update(ob)
+            self.pi.ob_rms.update(ob)
 
             # set old parameter values to new parameter values
             self.oldpi.load_state_dict(self.pi.state_dict())
