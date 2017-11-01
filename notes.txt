@@ -1,3 +1,14 @@
+Experiments results:
+ * two_layer_a100: didn't work
+ * two_layer: ent_reg=0.001. worked. peak reward 12
+ * three_layer: ent_reg=0.001. worked. peak reward 19
+ * fast_critic: a100 worked. peak reward 19
+
+
+Lessons:
+ * normalization of inputs / batchnorm didn't work
+
+
 Ideas:
  * try set initial stdev to higher
  * batchnorm: encourage exploration
