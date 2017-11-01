@@ -6,6 +6,7 @@ Experiments results:
 
 
 Lessons:
+ * fast critic learning is helpful
  * normalization of inputs / batchnorm didn't work
 
 
