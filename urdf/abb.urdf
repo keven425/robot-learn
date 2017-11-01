@@ -1,0 +1,305 @@
+<robot name="abb_arm">
+  <!-- Include materials -->
+  <material name="Black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="White">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <material name="Yellow">
+    <color rgba="0.5 0.5 0.0 1.0"/>
+  </material>
+
+  <!-- DUMMY LINK -->
+  <link name="base_dummy_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0 0 0"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+  </link>
+
+  <!-- BASE LINK -->
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.015"/>
+      <geometry>
+        <box size="0.095 0.077 0.03"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.015"/>
+      <geometry>
+        <box size="0.095 0.077 0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!-- SHOULDER LINK -->
+  <link name="shoulder_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.03"/>
+      <geometry>
+        <box size="0.12 0.12 0.03"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.03"/>
+      <geometry>
+        <box size="0.12 0.12 0.06"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!-- BIGARM LINK -->
+  <link name="bigarm_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0675"/>
+      <geometry>
+        <box size="0.03 0.03 0.2"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0675"/>
+      <geometry>
+        <box size="0.03 0.03 0.2"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!--FOREARM LINK -->
+  <link name="forearm_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0935"/>
+      <geometry>
+        <cylinder length="0.18" radius="0.02"/>
+      </geometry>
+      <material name="Black"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0935"/>
+      <geometry>
+        <cylinder length="0.18" radius="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!--GRIPPER LINK -->
+  <link name="gripper_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0115"/>
+      <geometry>
+        <box size="0.02 0.03 0.03"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0115"/>
+      <geometry>
+        <box size="0.02 0.03 0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!--STICK LINK -->
+  <link name="chuck_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 -0.07"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.025"/>
+      </geometry>
+      <material name="Yellow"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 -0.07"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.025"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <!--LEFT FINGER LINK -->
+  <link name="left_finger_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.047"/>
+      <geometry>
+        <box size="0.005 0.02 0.095"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.047"/>
+      <geometry>
+        <box size="0.005 0.02 0.095"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <!--RIGHT FINGER LINK -->
+  <!-- <link name="right_finger_link">
+    <visual>
+      <origin rpy="0 1 0" xyz="0.01 0 0.017"/>
+      <geometry>
+        <box size="0.005 0.02 0.095"/>
+      </geometry>
+      <material name="White"/>
+    </visual>
+    <collision>
+      <origin rpy="0 1 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.02 0.095"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link> -->
+
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+  <joint name="base_dummy_joint" type="fixed">
+    <parent link="base_dummy_link"/>
+    <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 0 0"/>
+  </joint>
+  <joint name="shoulder_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.015"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="300" lower="-2.35619449" upper="2.35619449" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <joint name="bigarm_joint" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="bigarm_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.065"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="-1.483529864195" upper="1.483529864195" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <joint name="forearm_joint" type="revolute">
+    <parent link="bigarm_link"/>
+    <child link="forearm_link"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.145"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="0.2707963267948966" upper="2.8707963267948966" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <joint name="gripper_joint" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="gripper_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.18"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="-2.36" upper="2.36" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <joint name="chuck_joint" type="revolute">
+    <parent link="gripper_link"/>
+    <child link="chuck_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" lower="-2.36" upper="2.36" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+  <joint name="hand_joint" type="revolute">
+    <parent link="chuck_link"/>
+    <child link="left_finger_link"/>
+    <!-- <child link="right_finger_link"/> -->
+    <origin rpy="0 0 0" xyz="0 0 -0.057"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="10" lower="-2.36" upper="2.36" velocity="1"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+
+  <!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="bigarm_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="forearm_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="chuck_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="tran1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="hand_joint">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+</robot>
+
