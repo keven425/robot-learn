@@ -11,25 +11,13 @@ from common.distributions import DiagGaussianPd
 # TODO: try rnn?
 # TODO: try velocity control?
 
-class MlpPolicy(nn.Module):
-    recurrent = False
-    def __init__(self, name, ob_space, ac_space, hid_size, num_hid_layers, gpu=False):
-        super(MlpPolicy, self).__init__()
-        self.recurrent = False
-        self.name = name
+class Actor(nn.Module):
+    def __init__(self, ob_space, ac_space, hid_size, num_hid_layers, gpu=False):
+        super(Actor, self).__init__()
         self.gpu = gpu
         self.ob_space = ob_space
         self.ac_space = ac_space
         self.n_act = ac_space.shape[0]
-
-        n_in = ob_space.shape[0]
-        self.fc_values = []
-        for i in range(num_hid_layers):
-            fc = nn.Linear(n_in, hid_size)
-            self.fc_values.append(fc)
-            n_in = hid_size
-        self.fc_values = nn.ModuleList(self.fc_values)
-        self.fc_value = nn.Linear(hid_size, 1)
 
         n_in = ob_space.shape[0]
         self.fc_acts = []
@@ -48,13 +36,9 @@ class MlpPolicy(nn.Module):
         self.register_parameter('act_log_stds', self.act_log_stds)
 
         # configure weights
-        init_weights_fc(self.fc_value, 1.0)
         init_weights_fc(self.fc_act, 0.01)
-        for fc in self.fc_values:
-            init_weights_fc(fc, 1.0)
         for fc in self.fc_acts:
             init_weights_fc(fc, 1.0)
-
 
     def forward(self, x):
         _x = x
@@ -62,12 +46,54 @@ class MlpPolicy(nn.Module):
             _x = self.tanh(fc(_x))
         act_means = self.tanh(self.fc_act(_x))
 
+        act_log_stds = act_means * 0. + self.act_log_stds
+        return act_means, act_log_stds
+
+
+class Critic(nn.Module):
+    def __init__(self, ob_space, hid_size, num_hid_layers):
+        super(Critic, self).__init__()
+        self.ob_space = ob_space
+
+        n_in = ob_space.shape[0]
+        self.fc_values = []
+        for i in range(num_hid_layers):
+            fc = nn.Linear(n_in, hid_size)
+            self.fc_values.append(fc)
+            n_in = hid_size
+        self.fc_values = nn.ModuleList(self.fc_values)
+        self.fc_value = nn.Linear(hid_size, 1)
+
+        self.relu = nn.ReLU(inplace=True)
+        self.tanh = nn.Tanh()
+
+        # configure weights
+        init_weights_fc(self.fc_value, 1.0)
+        for fc in self.fc_values:
+            init_weights_fc(fc, 1.0)
+
+    def forward(self, x):
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
-        value = self.fc_value(_x).view(-1) # flatten
+        value = self.fc_value(_x).view(-1)  # flatten
+        return value
 
-        act_log_stds = act_means * 0. + self.act_log_stds
+
+class MlpPolicy(nn.Module):
+    recurrent = False
+    def __init__(self, name, ob_space, ac_space, hid_size, num_hid_layers, gpu=False):
+        super(MlpPolicy, self).__init__()
+        self.recurrent = False
+        self.name = name
+        self.gpu = gpu
+        self.actor = Actor(ob_space, ac_space, hid_size, num_hid_layers, gpu)
+        self.critic = Critic(ob_space, hid_size, num_hid_layers)
+
+
+    def forward(self, x):
+        act_means, act_log_stds = self.actor.forward(x)
+        value = self.critic.forward(x)
         return act_means, act_log_stds, value
 
 
