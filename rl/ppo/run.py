@@ -45,6 +45,7 @@ def train(env, gpu, num_timesteps, seed, config):
                  hid_size=config.hid_size,
                  timesteps_per_batch=config.timesteps_per_batch,
                  clip_param=config.clip_param,
+                 beta=config.beta,
                  entcoeff=config.entcoeff,
                  optim_epochs=config.optim_epochs,
                  optim_stepsize=config.optim_stepsize,

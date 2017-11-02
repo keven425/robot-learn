@@ -20,6 +20,7 @@ class PPO(nn.Module):
                  hid_size,
                  timesteps_per_batch,  # timesteps per actor per update
                  clip_param,  # clipping parameter epsilon, entropy coeff
+                 beta,
                  entcoeff,
                  optim_epochs,  # optimization hypers
                  optim_stepsize,
@@ -41,6 +42,7 @@ class PPO(nn.Module):
         self.gpu = gpu
         self.timesteps_per_batch = timesteps_per_batch
         self.clip_param = clip_param
+        self.beta = beta
         self.entcoeff = entcoeff
         self.optim_epochs = optim_epochs
         self.optim_stepsize = optim_stepsize
@@ -83,6 +85,7 @@ class PPO(nn.Module):
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
         mean_kl = torch.mean(kl_old_new)
+        kl_loss = mean_kl * self.beta
         mean_entropy = torch.mean(_entropy)
         pol_entpen = -mean_entropy * self.entcoeff
 
@@ -98,7 +101,7 @@ class PPO(nn.Module):
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
 
-        total_loss = pol_surr + pol_entpen + vf_loss
+        total_loss = pol_surr + pol_entpen + vf_loss + kl_loss
         losses = [pol_surr, pol_entpen, vf_loss, mean_kl, mean_entropy]
         return total_loss, losses
 
