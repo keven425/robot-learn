@@ -21,6 +21,7 @@ class PPO(nn.Module):
                  timesteps_per_batch,  # timesteps per actor per update
                  clip_param,  # clipping parameter epsilon, entropy coeff
                  beta,
+                 kl_target,
                  entcoeff,
                  optim_epochs,  # optimization hypers
                  optim_stepsize,
@@ -43,6 +44,7 @@ class PPO(nn.Module):
         self.timesteps_per_batch = timesteps_per_batch
         self.clip_param = clip_param
         self.beta = beta
+        self.kl_target = kl_target
         self.entcoeff = entcoeff
         self.optim_epochs = optim_epochs
         self.optim_stepsize = optim_stepsize
@@ -85,6 +87,12 @@ class PPO(nn.Module):
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
         mean_kl = torch.mean(kl_old_new)
+        # adapt beta (kl loss coefficient)
+        _mean_kl = float(mean_kl.data.cpu().numpy())
+        if _mean_kl > self.kl_target * 1.5:
+            self.beta *= 2.
+        if _mean_kl < self.kl_target / 1.5:
+            self.beta /= 2.
         kl_loss = mean_kl * self.beta
         mean_entropy = torch.mean(_entropy)
         pol_entpen = -mean_entropy * self.entcoeff
