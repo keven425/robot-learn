@@ -25,6 +25,6 @@
     </worldbody>
 
     <!--robot-->
-    <include file="./dobot.xml"/>
+    <include file="./abb.xml"/>
 </mujoco>
 
