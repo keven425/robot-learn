@@ -9,7 +9,7 @@
                 <geom size="0.084 0.084 0.0275" pos="0 0 0.0275" type="box" rgba="1 1 1 1" />
                 <body name="shoulder_link" pos="0 0 0.0425">
                     <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                    <joint name="shoulder_joint" damping='1.' pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
+                    <joint name="shoulder_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
                     <geom size="0.06 0.0325" pos="0 0 0.0425" type="cylinder" rgba="0.8 0 0 1" />
                     <body name="bigarm_link" pos="0 0 0.109">
                         <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />

@@ -371,23 +371,25 @@ def save_video(queue, filename, fps):
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
     env.reset()
-    zeros = np.zeros(shape=[5])
-    ones = np.ones(shape=[5])
+    # zeros = np.zeros(shape=[6])
+    # ones = np.ones(shape=[6])
     for j in range(3):
-        env.start_record_video()
-        for i in range(3000):
-            acts = np.random.normal(zeros, ones)
-            _, _, done, _ = env.step(acts)
+        # env.start_record_video()
+        # for i in range(3000):
+        #     acts = np.random.normal(zeros, ones)
+        #     _, _, done, _ = env.step(acts)
+        #     env.render()
+        #     if done:
+        #         env.reset()
+        # env.stop_record_video()
+        for i in range(1500):
+            env.step([0., 0., 0., 0., 0., 0.])
             env.render()
-            if done:
-                env.reset()
-        env.stop_record_video()
-        # for i in range(1500):
-        #     env.step([0., 0., 0., 0., 0.])
-        #     env.render()
-        # for i in range(1500):
-        #     env.step([1., 1., 1., 1., 1.])
-        #     env.render()
-        # for i in range(1500):
-        #     env.step([-1., -1., -1., -1., -1.])
-        #     env.render()
+        for i in range(1500):
+            # env.step([1., 1., 1., 1., 1., 1.])
+            env.step([0., 0., 0., 0., 0., 1.])
+            env.render()
+        for i in range(1500):
+            # env.step([-1., -1., -1., -1., -1., -1.])
+            env.step([0., 0., 0., 0., 0., -1.])
+            env.render()
