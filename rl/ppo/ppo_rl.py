@@ -113,9 +113,10 @@ class PPO(nn.Module):
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
 
-        total_loss = pol_surr + pol_entpen + vf_loss + kl_loss
+        actor_loss = pol_surr + pol_entpen + kl_loss
+        critic_loss = vf_loss
         losses = [pol_surr, pol_entpen, vf_loss, mean_kl, mean_entropy]
-        return total_loss, losses
+        return actor_loss, critic_loss, losses
 
 
     def run(self):
@@ -172,8 +173,9 @@ class PPO(nn.Module):
                     self.critic_optimizer.zero_grad()
                     # batch['ob'] = rearrange_batch_image(batch['ob'])
                     batch = self.convert_batch_tensor(batch)
-                    total_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
-                    total_loss.backward()
+                    actor_loss, critic_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                    actor_loss.backward()
+                    critic_loss.backward()
                     self.actor_optimizer.step(_step_size=self.actor_stepsize * cur_lrmult)
                     self.critic_optimizer.step(_step_size=self.critic_stepsize * cur_lrmult)
                     losses.append(torch.stack(newlosses[0], dim=0).view(-1))
@@ -185,7 +187,7 @@ class PPO(nn.Module):
             for batch in d.iterate_once(self.optim_batchsize):
                 # batch['ob'] = rearrange_batch_image(batch['ob'])
                 batch = self.convert_batch_tensor(batch)
-                _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                _, _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
             logger.log(fmt_row(13, mean_losses))
