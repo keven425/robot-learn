@@ -14,7 +14,7 @@ class PushObjectEnv(utils.EzPickle):
     def __init__(self, frame_skip, max_timestep=3000, log_dir=''):
         self.frame_skip = frame_skip
 
-        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dobot_push.xml')
+        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'push_object.xml')
         self.model = mujoco_py.load_model_from_path(model_path)
         self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
         self.data = self.sim.data
@@ -387,9 +387,9 @@ if __name__ == '__main__':
             env.render()
         for i in range(1500):
             # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([1., 0., 0., 0., 0., 0.])
+            env.step([0., 1., 1., 0., 0., 0.])
             env.render()
         for i in range(1500):
             # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([-1., 0., 0., 0., 0., 0.])
+            env.step([0., -1., -1., 0., 0., 0.])
             env.render()
