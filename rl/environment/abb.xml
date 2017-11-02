@@ -27,7 +27,7 @@
                                     <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
                                     <joint name="chuck_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.36 2.36" />
                                     <geom size="0.02 0.0125" pos="0 0 -0.07" type="cylinder" rgba="0.5 0.5 0 1" />
-                                    <body name="left_finger_link" pos="0 0 -0.057">
+                                    <body name="left_finger_link" pos="0 0 -0.07">
                                         <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
                                         <joint name="hand_joint" pos="0 0 0" axis="1 0 0" limited="true" range="-2.36 2.36" />
                                         <geom size="0.005 0.04" pos="0 0 0.047" type="cylinder" rgba="1 1 1 1" />
