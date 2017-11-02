@@ -1,23 +1,25 @@
-Experiments results:
- * two_layer_a100: didn't work
- * two_layer: ent_reg=0.001. worked. peak reward 12
- * three_layer: ent_reg=0.001. worked. peak reward 19
- * fast_critic: a100 worked. peak reward 19
+Experiments:
+ * add fixed_kl, a100, abb to master
+ * fast critic
+ * three_layer
+ * batchnorm
+ * std_fc
+ * vel_ctrl
+ * rnn
+ * allow rotation
+
+
 
 
 Lessons:
  * fast critic learning is helpful
  * normalization of inputs / batchnorm didn't work
+ * fixed_kl works great
+ * a100: more accurate end position
 
 
 Ideas:
- * try set initial stdev to higher
- * batchnorm: encourage exploration
- * 2 layer: encourage exploration
- * 3 layer use ent reg
- * std_fc: promising. entropy keeps rising. use 3 layer
- * use running mean for observation
- * make critic learn 10x faster actor
+ * std_fc: promising
 
 
 Papers:
