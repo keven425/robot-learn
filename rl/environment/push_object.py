@@ -14,7 +14,7 @@ class PushObjectEnv(utils.EzPickle):
     def __init__(self, frame_skip, max_timestep=3000, log_dir=''):
         self.frame_skip = frame_skip
 
-        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dobot_push.xml')
+        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'push_object.xml')
         self.model = mujoco_py.load_model_from_path(model_path)
         self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
         self.data = self.sim.data
@@ -328,7 +328,7 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_body_xmat(self, body_name):
         idx = self.model.body_name2id(body_name)
-        return self.data.xmat[idx].reshape((3, 3))
+        return self.data.body_xmat[idx]
 
 
     # def state_vector(self):
@@ -346,8 +346,10 @@ class PushObjectEnv(utils.EzPickle):
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
+        cube_pose = self.get_body_xmat("cube").reshape(-1)
         return np.concatenate([
             cube_com,
+            cube_pose,
             np.cos(actuator_pos),
             np.sin(actuator_pos),
             actuator_pos,
@@ -387,9 +389,9 @@ if __name__ == '__main__':
             env.render()
         for i in range(1500):
             # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 0., 0., 0., 0., 1.])
+            env.step([0., 1., 1., 0., 0., 0.])
             env.render()
         for i in range(1500):
             # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([0., 0., 0., 0., 0., -1.])
+            env.step([0., -1., -1., 0., 0., 0.])
             env.render()
