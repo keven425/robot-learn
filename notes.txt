@@ -1,13 +1,7 @@
 Experiments:
- * add fixed_kl, a100, abb to master
- * fast critic
- * three_layer
- * batchnorm
- * std_fc
- * vel_ctrl
- * rnn
- * allow rotation
-
+ * vel_ctrl: didn't work
+ * fast_critic: worked
+ * clamp_vel_in: worked
 
 
 
