@@ -328,7 +328,7 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_body_xmat(self, body_name):
         idx = self.model.body_name2id(body_name)
-        return self.data.xmat[idx].reshape((3, 3))
+        return self.data.body_xmat[idx]
 
 
     # def state_vector(self):
@@ -346,8 +346,10 @@ class PushObjectEnv(utils.EzPickle):
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
+        cube_pose = self.get_body_xmat("cube").reshape(-1)
         return np.concatenate([
             cube_com,
+            cube_pose,
             np.cos(actuator_pos),
             np.sin(actuator_pos),
             actuator_pos,
