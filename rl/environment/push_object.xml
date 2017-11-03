@@ -2,9 +2,9 @@
     <!--default-->
     <default>
         <!--need to define ctrllimited='false' in dobot.xml, because velocity config will override polisition config-->
-        <position kp="1"/>
-        <velocity kv="10" ctrlrange='-1 1' ctrllimited='true'/>
-        <geom friction="1 0.1 0.1"/>
+        <velocity kv="1"/>
+        <general gainprm="100" ctrlrange='-1 1' ctrllimited='true'/>
+        <joint damping='1' armature='0.01'/>
     </default>
 
     <asset>
