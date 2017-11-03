@@ -139,6 +139,7 @@ class PPO(nn.Module):
 
             logger.log("********** Iteration %i ************"%iters_so_far)
 
+            self.pi.reset() # reset rnn hidden states for fresh start
             segment = seg_generator.__next__()
             self.add_vtarg_and_adv(segment, self.gamma, self.lam)
 
@@ -284,7 +285,6 @@ class PPO(nn.Module):
                 cur_ep_len = 0
                 i = 0
                 ob = env.reset()
-                pi.reset()
 
 
     def record_video(self, pi, env):

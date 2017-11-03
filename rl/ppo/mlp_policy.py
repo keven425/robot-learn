@@ -61,21 +61,21 @@ class MlpPolicy(nn.Module):
 
 
     def forward(self, x):
-        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(x, self.hidden_value, self.hidden_act)
+        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(x, self.hidden_act, self.hidden_value)
         return act_means, act_log_stds, value
 
 
-    def forward_step(self, x, hidden_value, hidden_act):
+    def forward_step(self, x, hidden_act, hidden_value):
         _x = x
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
-        h_act, c_act = self.lstm_value(_x, hidden_value)
+        h_act, c_act = self.lstm_value(_x, hidden_act)
         act_means = self.tanh(self.fc_act(h_act))
 
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
-        h_value, c_value = self.lstm_value(_x, hidden_act)
+        h_value, c_value = self.lstm_value(_x, hidden_value)
         value = self.fc_value(h_value).view(-1) # flatten
 
         act_log_stds = act_means * 0. + self.act_log_stds
@@ -106,7 +106,7 @@ class MlpPolicy(nn.Module):
         return var
 
     def act(self, ob, stochastic=True):
-        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(ob[None], self.hidden_value, self.hidden_act)
+        act_means, act_log_stds, value, self.hidden_act, self.hidden_value = self.forward_step(ob[None], self.hidden_act, self.hidden_value)
         acts = act_means
         if stochastic:
             acts = DiagGaussianPd.sample(act_means, act_log_stds, gpu=self.gpu)
