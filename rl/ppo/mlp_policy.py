@@ -63,12 +63,12 @@ class MlpPolicy(nn.Module):
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
         act_means = self.tanh(self.fc_act(_x))
+        dists = self.fc_dist(_x)
 
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
-        dists = self.fc_dist(_x)
 
         act_log_stds = act_means * 0. + self.act_log_stds
         return act_means, act_log_stds, value, dists
