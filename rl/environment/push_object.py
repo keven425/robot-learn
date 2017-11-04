@@ -50,7 +50,7 @@ class PushObjectEnv(utils.EzPickle):
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
         self.init_qvel = self.data.qvel.ravel().copy()
-        _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
+        _ob, _hidden_ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
         self.obs_dim = _ob.size
 
@@ -118,18 +118,17 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.do_simulation(action)
         ob = self._get_obs()
-        obj_pos = self.get_body_com(self.obj_name)
-        obj_pos_xy = obj_pos[:2]
 
-        # distance between object and goal
-        dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dist_sq)
+        dsq_obj_goal = self.get_dsq_obj_goal()
+        rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dsq_obj_goal)
 
         # distance between object and robot end-effector
-        endeff_pos = self.get_body_com(self.endeff_name)
-        dist_sq = np.sum(np.square(endeff_pos - obj_pos))
-        rew_endeff_obj = 0.02 * np.exp(-100. * dist_sq)
+        dsq_endeff_obj = self.get_dsq_endeff_obj()
+        rew_endeff_obj = 0.02 * np.exp(-100. * dsq_endeff_obj)
         reward = rew_obj_goal + rew_endeff_obj
+
+        # use distances as hidden observations
+        hidden_ob = self.get_hidden_ob()
 
         # reward_ctrl = -np.square(action).mean()
         # reward = rew_obj_goal + reward_ctrl
@@ -137,7 +136,34 @@ class PushObjectEnv(utils.EzPickle):
         if self.t > self.max_timestep:
             done = True
         self.t += 1
-        return ob, reward, done, dict()
+        return ob, hidden_ob, reward, done, {}
+
+
+    def get_hidden_ob(self):
+        dsq_obj_goal = self.get_dsq_obj_goal()
+
+        # distance between object and robot end-effector
+        dsq_endeff_obj = self.get_dsq_endeff_obj()
+
+        # use distances as hidden observations
+        dist_obj_goal = np.sqrt(dsq_obj_goal)
+        dist_endeff_obj = np.sqrt(dsq_endeff_obj)
+        return np.array([dist_obj_goal, dist_endeff_obj])
+
+
+    def get_dsq_obj_goal(self):
+        obj_pos = self.get_body_com(self.obj_name)
+        obj_pos_xy = obj_pos[:2]
+        # distance between object and goal
+        dsq_obj_goal = np.sum(np.square(obj_pos_xy - self.goal_pos))
+        return dsq_obj_goal
+
+
+    def get_dsq_endeff_obj(self):
+        obj_pos = self.get_body_com(self.obj_name)
+        endeff_pos = self.get_body_com(self.endeff_name)
+        dsq_endeff_obj = np.sum(np.square(endeff_pos - obj_pos))
+        return dsq_endeff_obj
 
 
     def reset(self, rand_init_pos=False):
@@ -149,7 +175,8 @@ class PushObjectEnv(utils.EzPickle):
         self.t = 0
         self.sim.reset()
         ob = self.reset_model(rand_init_pos)
-        return ob
+        hidden_ob = self.get_hidden_ob()
+        return ob, hidden_ob
 
 
     def render(self, mode='human', close=False):
@@ -371,11 +398,9 @@ class PushObjectEnv(utils.EzPickle):
     def _get_obs(self):
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
-        # actuator velocity can be out of [-1, 1] range, clip
-        # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
-        cube_com = self.get_body_com("cube")
+        cube_com = self.get_body_com(self.obj_name)
         return np.concatenate([
             cube_com,
             np.cos(actuator_pos),
