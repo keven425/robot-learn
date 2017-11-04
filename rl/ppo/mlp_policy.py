@@ -50,6 +50,7 @@ class MlpPolicy(nn.Module):
 
         # configure weights
         init_weights_fc(self.fc_value, 1.0)
+        init_weights_fc(self.fc_dist, 1.0)
         init_weights_fc(self.fc_act, 0.01)
         for fc in self.fc_values:
             init_weights_fc(fc, 1.0)
