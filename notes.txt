@@ -1,8 +1,8 @@
 Experiments:
- * vel_ctrl: didn't work
- * fast_critic: worked
- * clamp_vel_in: worked
 
+
+Ideas:
+ * incorporate sin(), cos() of orientations
 
 
 Lessons:
@@ -10,10 +10,6 @@ Lessons:
  * normalization of inputs / batchnorm didn't work
  * fixed_kl works great
  * a100: more accurate end position
-
-
-Ideas:
- * std_fc: promising
 
 
 Papers:
