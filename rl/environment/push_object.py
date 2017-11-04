@@ -11,7 +11,7 @@ import mujoco_py
 
 class PushObjectEnv(utils.EzPickle):
 
-    def __init__(self, frame_skip, max_timestep=3000, log_dir=''):
+    def __init__(self, frame_skip, max_timestep=3000, log_dir='', seed=None):
         self.frame_skip = frame_skip
 
         model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'push_object.xml')
@@ -60,7 +60,7 @@ class PushObjectEnv(utils.EzPickle):
         low = -high
         self.observation_space = Box(low, high)
         self.reward_range = (-np.inf, np.inf)
-        self.seed()
+        self.seed(seed)
 
         # set up videos
         self.video_idx = 0
