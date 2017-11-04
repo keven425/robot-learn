@@ -30,6 +30,7 @@ class MlpPolicy(nn.Module):
             n_in = hid_size
         self.fc_values = nn.ModuleList(self.fc_values)
         self.fc_value = nn.Linear(hid_size, 1)
+        self.fc_dist = nn.Linear(hid_size, 2) # predict distances
 
         n_in = ob_space.shape[0]
         self.fc_acts = []
@@ -66,13 +67,14 @@ class MlpPolicy(nn.Module):
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
+        dists = self.fc_dist(_x)
 
         act_log_stds = act_means * 0. + self.act_log_stds
-        return act_means, act_log_stds, value
+        return act_means, act_log_stds, value, dists
 
 
     def act(self, ob, stochastic=True):
-        act_means, act_log_stds, value = self.forward(ob[None])
+        act_means, act_log_stds, value, _ = self.forward(ob[None])
         acts = act_means
         if stochastic:
             acts = DiagGaussianPd.sample(act_means, act_log_stds, gpu=self.gpu)
