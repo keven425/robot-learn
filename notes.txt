@@ -1,6 +1,18 @@
 Experiments:
 
 
+today:
+ * abb robot API
+ * run once on real robot
+ * incorporate pseudo reward for endeffector vs. cube
+ * vision
+
+
+this week:
+ * ping pong in simulator
+ * new RL algorithm
+
+
 Ideas:
  * incorporate sin(), cos() of orientations
 
