@@ -167,6 +167,7 @@ class PPO(nn.Module):
 
             logger.log("********** Iteration %i ************"%iters_so_far)
 
+            self.pi.train(False)
             segment = seg_generator.__next__()
             self.add_vtarg_and_adv(segment, self.gamma, self.lam)
 
@@ -188,11 +189,11 @@ class PPO(nn.Module):
             for _ in range(self.optim_epochs):
                 losses = [] # list of tuples, each of which gives the loss for a minibatch
                 for batch in d.iterate_once(self.optim_batchsize):
+                    self.oldpi.train(True)
+                    self.pi.train(True)
                     self.optimizer.zero_grad()
                     # batch['ob'] = rearrange_batch_image(batch['ob'])
                     batch = self.convert_batch_tensor(batch)
-                    self.oldpi.train(True)
-                    self.pi.train(True)
                     total_loss, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                     total_loss.backward()
                     self.optimizer.step(_step_size=self.optim_stepsize * cur_lrmult)
@@ -203,10 +204,10 @@ class PPO(nn.Module):
             logger.log("Evaluating losses...")
             losses = []
             for batch in d.iterate_once(self.optim_batchsize):
-                # batch['ob'] = rearrange_batch_image(batch['ob'])
-                batch = self.convert_batch_tensor(batch)
                 self.oldpi.train(False)
                 self.pi.train(False)
+                # batch['ob'] = rearrange_batch_image(batch['ob'])
+                batch = self.convert_batch_tensor(batch)
                 _, *newlosses = self.forward(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
@@ -281,7 +282,6 @@ class PPO(nn.Module):
             prevac = ac
             # _ob = rearrange_image(ob)
             _ob = self.convert_tensor(ob)
-            pi.train(False)
             ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
