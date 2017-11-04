@@ -15,10 +15,10 @@ this week:
 
 Ideas:
  * incorporate endeff-obj distance reward to
-   * joint_av
    * vel_force_ctrl
    * rnn
    * batchnorm
+   * joint_av
  * incorporate sin(), cos() of orientations
 
 
