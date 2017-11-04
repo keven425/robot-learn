@@ -22,6 +22,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_names = list(self.sim.model.joint_names)
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
+        self.endeff_name = 'endeffector'
         self.goal_pos = np.array([.15, .15])
         self.dist_thresh = 0.01
         self.metadata = {
@@ -115,12 +116,21 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.do_simulation(action)
         ob = self._get_obs()
-        obj_pos_xy = self.get_body_com(self.obj_name)[:2]
+        obj_pos = self.get_body_com(self.obj_name)
+        obj_pos_xy = obj_pos[:2]
+
+        # distance between object and goal
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        reward_dist = 0.1 * np.exp(-100. * dist_sq)
-        reward = reward_dist
+        rew_obj_goal = 0.1 * np.exp(-100. * dist_sq)
+
+        # distance between object and robot end-effector
+        endeff_pos = self.get_body_com(self.endeff_name)
+        dist_sq = np.sum(np.square(endeff_pos - obj_pos))
+        rew_endeff_obj = 0.02 * np.exp(-100. * dist_sq)
+        reward = rew_obj_goal + rew_endeff_obj
+
         # reward_ctrl = -np.square(action).mean()
-        # reward = reward_dist + reward_ctrl
+        # reward = rew_obj_goal + reward_ctrl
         done = False
         if self.t > self.max_timestep:
             done = True
