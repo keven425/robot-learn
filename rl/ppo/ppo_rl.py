@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -34,7 +35,8 @@ class PPO(nn.Module):
                  callback=None,  # you can do anything in the callback, since it takes locals(), globals()
                  adam_epsilon=1e-5,
                  schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
-                 record_video_freq=100
+                 record_video_freq=100,
+                 log_dir=''
                  ):
         super(PPO, self).__init__()
         self.env = env
@@ -57,6 +59,8 @@ class PPO(nn.Module):
         self.adam_epsilon = adam_epsilon
         self.schedule = schedule
         self.record_video_freq = record_video_freq
+        self.log_dir = log_dir
+        self.save_model_path = os.path.join(self.log_dir, 'model.pth')
 
         # Setup losses and stuff
         # ----------------------------------------
@@ -116,6 +120,7 @@ class PPO(nn.Module):
         timesteps_so_far = 0
         iters_so_far = 0
         tstart = time.time()
+        best_rew = 0.
         lenbuffer = deque(maxlen=100) # rolling buffer for episode lengths
         rewbuffer = deque(maxlen=100) # rolling buffer for episode rewards
         self.check_time_constraints()
@@ -174,17 +179,21 @@ class PPO(nn.Module):
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
             logger.log(fmt_row(13, mean_losses))
-
             for (lossval, name) in zipsame(mean_losses, self.loss_names):
                 logger.record_tabular("loss_"+name, lossval)
             logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
             lrlocal = (segment["ep_lens"], segment["ep_rets"]) # local values
             lens, rews = map(flatten_lists, zip(*[lrlocal]))
+            mean_rew = np.mean(rews)
+            if mean_rew > best_rew:
+                torch.save(self.pi.state_dict(), self.save_model_path)
+                print('saved model to: ' + self.save_model_path)
+                best_rew = mean_rew
             lenbuffer.extend(lens)
             rewbuffer.extend(rews)
             logger.record_tabular("EpLenMean", np.mean(lenbuffer))
             logger.record_tabular("EpRewMean", np.mean(rewbuffer))
-            logger.record_tabular("RewThisIter", np.mean(rews))
+            logger.record_tabular("RewThisIter", mean_rew)
             logger.record_tabular("EpThisIter", len(lens))
             episodes_so_far += len(lens)
             timesteps_so_far += sum(lens)

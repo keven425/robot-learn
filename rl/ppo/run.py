@@ -9,6 +9,7 @@ import os.path as osp
 import gym, logging
 from common import logger
 from config import Config
+from ppo.test import test
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
     parser.add_argument('--log', help='log directory', type=str, default='')
+    parser.add_argument('--load', help='load path of model', type=str, default='')
     args = parser.parse_args()
     pp = pprint.PrettyPrinter(indent=1)
     print(pp.pformat(args))
@@ -25,10 +27,13 @@ def main():
     env = config.env(frame_skip=config.frame_skip,
                      max_timestep=config.timestep_per_episode,
                      log_dir=args.log)
-    train(env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config)
+    if args.load:
+      test(env, args.gpu, policy=config.policy, load_path=args.load, num_hid_layers=config.num_hid_layers, hid_size=config.hid_size)
+    else:
+      train(env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config, log_dir=args.log)
 
 
-def train(env, gpu, num_timesteps, seed, config):
+def train(env, gpu, num_timesteps, seed, config, log_dir):
     from ppo.ppo_rl import PPO
     set_global_seeds(seed, gpu)
     env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"), allow_early_resets=True)
@@ -54,7 +59,8 @@ def train(env, gpu, num_timesteps, seed, config):
                  lam=config.lam,
                  max_timesteps=num_timesteps,
                  schedule=config.schedule,
-                 record_video_freq=config.record_video_freq)
+                 record_video_freq=config.record_video_freq,
+                 log_dir=log_dir)
     ppo_rl.run()
     env.close()
 

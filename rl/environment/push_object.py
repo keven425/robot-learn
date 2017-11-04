@@ -213,15 +213,16 @@ class PushObjectEnv(utils.EzPickle):
           self._closed = True
 
 
-    def start_record_video(self):
+    def start_record_video(self, path=None):
         if self.recording:
             print('record video in progress. calling stop before start.')
             self.stop_record_video()
         self.recording = True
         self.viewer._record_video = True
         fps = (1 / self.viewer._time_per_render)
+        path = path or (self.video_path % self.video_idx)
         self.video_process = Process(target=save_video,
-                                     args=(self.viewer._video_queue, self.video_path % self.video_idx, fps))
+                                     args=(self.viewer._video_queue, path, fps))
         self.video_process.start()
 
 
