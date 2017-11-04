@@ -1,5 +1,5 @@
 Experiments:
-
+ * hand_cube_rew: works great
 
 today:
  * abb robot API
@@ -14,6 +14,11 @@ this week:
 
 
 Ideas:
+ * incorporate endeff-obj distance reward to
+   * joint_av
+   * vel_force_ctrl
+   * rnn
+   * batchnorm
  * incorporate sin(), cos() of orientations
 
 
