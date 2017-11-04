@@ -83,8 +83,8 @@ class PPO(nn.Module):
     '''
     def forward(self, ob, hid_ob, ac, atarg, _return, lr_mult):
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
-        act_means_old, act_log_stds_old, value_old, dists_new = self.oldpi.forward(ob)
-        act_means_new, act_log_stds_new, value_new, dists_old = self.pi.forward(ob)
+        act_means_old, act_log_stds_old, value_old, dists_old = self.oldpi.forward(ob)
+        act_means_new, act_log_stds_new, value_new, dists_new = self.pi.forward(ob)
 
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
