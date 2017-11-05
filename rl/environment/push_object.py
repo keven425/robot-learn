@@ -256,6 +256,7 @@ class PushObjectEnv(utils.EzPickle):
             self.stop_record_video()
         self.recording = True
         self.viewer._record_video = True
+        self.viewer._hide_overlay = True
         fps = (1 / self.viewer._time_per_render)
         path = path or (self.video_path % self.video_idx)
         self.video_process = Process(target=save_video,
