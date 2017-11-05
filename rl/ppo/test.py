@@ -1,13 +1,5 @@
-import os
 import torch
-import torch.nn as nn
 from torch.autograd import Variable
-from ppo.adam_var_lr import AdamVariableLr
-import numpy as np
-from common import logger, Dataset, explained_variance, fmt_row, zipsame
-from common.pytorch_util import log_prob
-import time
-from collections import deque
 
 
 
@@ -20,7 +12,7 @@ def test(env,
     ob_space = env.observation_space
     ac_space = env.action_space
     pi = policy("pi", ob_space, ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)
-    pi.load_state_dict(torch.load(load_path))
+    pi.load_state_dict(torch.load(load_path, map_location=lambda storage, loc: storage))
     if gpu:
         pi.cuda()
     pi.train()
