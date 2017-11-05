@@ -429,7 +429,7 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def save_image_sampled(self, image):
-        if self.image_idx % 10000 != 0:
+        if self.image_idx % 100000 != 0:
             self.image_idx += 1
             return
         path = self.image_path % self.image_idx
