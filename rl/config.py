@@ -42,7 +42,7 @@ class Config():
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
-    self.record_video_freq = 1
+    self.record_video_freq = 100
     self.image_h = 128
     self.image_w = 128
 
