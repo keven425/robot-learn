@@ -13,7 +13,7 @@ import mujoco_py
 
 class PushObjectEnv(utils.EzPickle):
 
-    def __init__(self, frame_skip, max_timestep=3000, log_dir='', seed=None):
+    def __init__(self, frame_skip, max_timestep=3000, log_dir='', seed=None, image_h=128, image_w=128):
         self.frame_skip = frame_skip
 
         model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'push_object.xml')
@@ -35,6 +35,8 @@ class PushObjectEnv(utils.EzPickle):
         }
         self.t = 0
         self.max_timestep = max_timestep
+        self.image_h = image_h
+        self.image_w = image_w
 
         pos_actuators = [actuator for actuator in self.model.actuator_names if 'position' in actuator]
         vel_actuators = [actuator for actuator in self.model.actuator_names if 'velocity' in actuator]
@@ -262,6 +264,7 @@ class PushObjectEnv(utils.EzPickle):
         if self.recording:
             print('record video in progress. calling stop before start.')
             self.stop_record_video()
+        self.viewer_setup_video()
         self.recording = True
         self.viewer._record_video = True
         self.viewer._hide_overlay = True
@@ -320,6 +323,15 @@ class PushObjectEnv(utils.EzPickle):
         self.viewer.cam.lookat[2] += 0.
         self.viewer.cam.elevation = -90  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
         self.viewer.cam.azimuth = 0
+
+
+    def viewer_setup_video(self):
+        self.viewer.cam.distance = self.model.stat.extent * 1.0  # how much you "zoom in", model.stat.extent is the max limits of the arena
+        self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
+        self.viewer.cam.lookat[1] += 0.
+        self.viewer.cam.lookat[2] += 0.
+        self.viewer.cam.elevation = -45  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
+        self.viewer.cam.azimuth = 90
 
 
     def set_state(self, qpos, qvel):
@@ -403,7 +415,8 @@ class PushObjectEnv(utils.EzPickle):
         actuator_pos = self.normalize_pos(actuator_pos)
         # cube_com = self.get_body_com(self.obj_name)
         # cube_pose = self.get_body_xmat(self.obj_name).reshape(-1)
-        image = self.viewer._read_pixels_as_in_window().copy()
+        image = self.viewer._read_pixels_as_in_window()
+        image = cv2.resize(image, (self.image_w, self.image_h)) # scale image
         self.save_image_sampled(image)
         joints = np.concatenate([
             # cube_com,

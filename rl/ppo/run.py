@@ -28,7 +28,9 @@ def main():
     env = config.env(frame_skip=config.frame_skip,
                      max_timestep=config.timestep_per_episode,
                      log_dir=args.log,
-                     seed=args.seed)
+                     seed=args.seed,
+                     image_h=config.image_h,
+                     image_w=config.image_w)
     if args.test:
       test(env, args.gpu, policy=config.policy, load_path=args.load, num_hid_layers=config.num_hid_layers, hid_size=config.hid_size)
     else:
