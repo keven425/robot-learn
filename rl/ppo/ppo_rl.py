@@ -302,6 +302,7 @@ class PPO(nn.Module):
         env.env.start_record_video()
         while not done:
             image, joint = ob
+            image = rearrange_image(image)
             image = self.convert_tensor(image, train=False)
             joint = self.convert_tensor(joint, train=False)
             ac, vpred = pi.act((image, joint), stochastic=False)
