@@ -181,7 +181,7 @@ class PPO(nn.Module):
             losses = []
             for batch in d.iterate_once(self.optim_batchsize):
                 # batch['image'] = rearrange_batch_image(batch['image'])
-                batch = self.convert_batch_tensor(batch)
+                batch = self.convert_batch_tensor(batch, train=False)
                 _, *newlosses = self.forward(batch["image"], batch["joint"], batch["hid_ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
@@ -257,8 +257,8 @@ class PPO(nn.Module):
         while True:
             prevac = ac
             image = rearrange_image(image)
-            _image = self.convert_tensor(image)
-            _joint = self.convert_tensor(joint)
+            _image = self.convert_tensor(image, train=False)
+            _joint = self.convert_tensor(joint, train=False)
             ac, vpred = pi.act((_image, _joint), stochastic=True) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
@@ -301,8 +301,10 @@ class PPO(nn.Module):
         done = False
         env.env.start_record_video()
         while not done:
-            _ob = self.convert_tensor(ob)
-            ac, vpred = pi.act(_ob, stochastic=False)
+            image, joint = ob
+            image = self.convert_tensor(image, train=False)
+            joint = self.convert_tensor(joint, train=False)
+            ac, vpred = pi.act((image, joint), stochastic=False)
             ob, _, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
@@ -328,14 +330,14 @@ class PPO(nn.Module):
         seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
 
-    def convert_batch_tensor(self, batch):
+    def convert_batch_tensor(self, batch, train=True):
         for key in batch.keys():
-            batch[key] = self.convert_tensor(batch[key])
+            batch[key] = self.convert_tensor(batch[key], train=train)
         return batch
 
 
-    def convert_tensor(self, var):
-        var = Variable(torch.from_numpy(var).float(), requires_grad=False)
+    def convert_tensor(self, var, train=True):
+        var = Variable(torch.from_numpy(var).float(), requires_grad=False, volatile=not train)
         if self.gpu:
             var = var.cuda()
         return var
