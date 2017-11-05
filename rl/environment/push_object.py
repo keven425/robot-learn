@@ -327,11 +327,11 @@ class PushObjectEnv(utils.EzPickle):
 
     def viewer_setup_video(self):
         self.viewer.cam.distance = self.model.stat.extent * 1.0  # how much you "zoom in", model.stat.extent is the max limits of the arena
-        self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
-        self.viewer.cam.lookat[1] += 0.
-        self.viewer.cam.lookat[2] += 0.
-        self.viewer.cam.elevation = -45  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
-        self.viewer.cam.azimuth = 90
+        # self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
+        # self.viewer.cam.lookat[1] += 0.
+        # self.viewer.cam.lookat[2] += 0.
+        self.viewer.cam.elevation = -45.  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
+        self.viewer.cam.azimuth = 90.
 
 
     def set_state(self, qpos, qvel):
