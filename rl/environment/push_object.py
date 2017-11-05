@@ -1,3 +1,4 @@
+import cv2
 import os
 import imageio
 import atexit
@@ -19,6 +20,7 @@ class PushObjectEnv(utils.EzPickle):
         self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
         self.data = self.sim.data
         self.viewer = mujoco_py.MjViewer(self.sim)
+        self.viewer_setup()
         self.joint_names = list(self.sim.model.joint_names)
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
@@ -45,24 +47,6 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_ranges = [self.model.jnt_range[joint] for joint in pos_actuators_joints]
         self.joint_ranges = np.array(self.joint_ranges)
 
-        # initial position/velocity of robot and box
-        self.init_qpos = self.data.qpos.ravel().copy()
-        self.init_qvel = self.data.qvel.ravel().copy()
-        _ob, _hidden_ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
-        assert not _done
-        self.obs_dim = _ob.size
-
-        bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
-        low = bounds[:, 0]
-        high = bounds[:, 1]
-        self.action_space = Box(low, high)
-
-        high = np.inf*np.ones(self.obs_dim)
-        low = -high
-        self.observation_space = Box(low, high)
-        self.reward_range = (-np.inf, np.inf)
-        self.seed(seed)
-
         # set up videos
         self.video_idx = 0
         self.video_path = os.path.join(log_dir, "video/video_%07d.mp4")
@@ -70,6 +54,31 @@ class PushObjectEnv(utils.EzPickle):
         self.recording = False
         os.makedirs(self.video_dir, exist_ok=True)
         print('Saving videos to ' + self.video_dir)
+
+        self.image_idx = 0
+        self.image_path = os.path.join(log_dir, "image/image_%07d.png")
+        self.image_dir = os.path.abspath(os.path.join(self.image_path, os.pardir))
+        os.makedirs(self.image_dir, exist_ok=True)
+        print('Saving images to ' + self.image_dir)
+
+        # initial position/velocity of robot and box
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
+        (image, joints), _hidden_ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
+        self.image_shape = image.shape
+        assert not _done
+        self.joints_dim = joints.size
+
+        bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
+        low = bounds[:, 0]
+        high = bounds[:, 1]
+        self.action_space = Box(low, high)
+
+        high = np.inf*np.ones(self.joints_dim)
+        low = -high
+        self.observation_space = Box(low, high)
+        self.reward_range = (-np.inf, np.inf)
+        self.seed(seed)
 
         # close on exit
         atexit.register(self.close)
@@ -138,15 +147,12 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def get_hidden_ob(self):
-        dsq_obj_goal = self.get_dsq_obj_goal()
-
-        # distance between object and robot end-effector
-        dsq_endeff_obj = self.get_dsq_endeff_obj()
-
-        # use distances as hidden observations
-        dist_obj_goal = np.sqrt(dsq_obj_goal)
-        dist_endeff_obj = np.sqrt(dsq_endeff_obj)
-        return np.array([dist_obj_goal, dist_endeff_obj])
+        cube_com = self.get_body_com(self.obj_name)
+        cube_pose = self.get_body_xmat(self.obj_name).reshape(-1)
+        return np.concatenate([
+            cube_com,
+            cube_pose
+        ])
 
 
     def get_dsq_obj_goal(self):
@@ -174,6 +180,8 @@ class PushObjectEnv(utils.EzPickle):
         self.sim.reset()
         ob = self.reset_model()
         hidden_ob = self.get_hidden_ob()
+        if self.viewer is not None:
+            self.viewer_setup()
         return ob, hidden_ob
 
 
@@ -290,10 +298,13 @@ class PushObjectEnv(utils.EzPickle):
         Optionally implement this method, if you need to tinker with camera position
         and so forth.
         """
-        pass
-
-
-    # -----------------------------
+        # self.viewer.cam.trackbodyid = 0  # id of the body to track
+        self.viewer.cam.distance = self.model.stat.extent * 1.0  # how much you "zoom in", model.stat.extent is the max limits of the arena
+        self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
+        self.viewer.cam.lookat[1] += 0.
+        self.viewer.cam.lookat[2] += 0.
+        self.viewer.cam.elevation = -90  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
+        self.viewer.cam.azimuth = 0
 
 
     def set_state(self, qpos, qvel):
@@ -370,25 +381,32 @@ class PushObjectEnv(utils.EzPickle):
         return self.data.body_xmat[idx]
 
 
-    # def state_vector(self):
-    #     return np.concatenate([
-    #         self.model.data.qpos.flat,
-    #         self.model.data.qvel.flat
-    #     ])
-
-
     def _get_obs(self):
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
-        cube_com = self.get_body_com(self.obj_name)
-        return np.concatenate([
-            cube_com,
+        # cube_com = self.get_body_com(self.obj_name)
+        # cube_pose = self.get_body_xmat(self.obj_name).reshape(-1)
+        image = self.viewer._read_pixels_as_in_window().copy()
+        self.save_image_sampled(image)
+        joints = np.concatenate([
+            # cube_com,
+            # cube_pose,
             np.cos(actuator_pos),
             np.sin(actuator_pos),
             actuator_pos
         ])
+        return image, joints
+
+
+    def save_image_sampled(self, image):
+        if self.image_idx % 10000 != 0:
+            self.image_idx += 1
+            return
+        path = self.image_path % self.image_idx
+        cv2.imwrite(path, image)
+        self.image_idx += 1
 
 
 # Separate Process to save video. This way visualization is

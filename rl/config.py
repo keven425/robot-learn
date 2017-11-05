@@ -21,7 +21,7 @@ class Config():
 
     # mujoco config
     from environment.push_object import PushObjectEnv
-    from ppo.mlp_policy import MlpPolicy
+    from ppo.cnn_policy import CnnPolicy
     from common.distributions import DiagGaussianPd
     self.frame_skip = 10
     self.frame_per_episode = 3000
@@ -31,14 +31,14 @@ class Config():
     self.num_hid_layers = 2
     self.hid_size = 64
     self.num_timesteps = 1e20
-    self.timesteps_per_batch = 2048
-    self.policy = MlpPolicy
+    self.timesteps_per_batch = 512
+    self.policy = CnnPolicy
     self.clip_param = 0.2
     self.beta = 1.
     self.entcoeff = 0.001
-    self.optim_epochs = 20
+    self.optim_epochs = 10
     self.optim_stepsize = 4e-4
-    self.optim_batchsize = 512
+    self.optim_batchsize = 128
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'

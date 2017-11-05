@@ -67,8 +67,8 @@ class PPO(nn.Module):
         # ----------------------------------------
         self.ob_space = env.observation_space
         self.ac_space = env.action_space
-        self.pi = policy("pi", self.ob_space, self.ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)  # Construct network for new policy
-        self.oldpi = policy("oldpi", self.ob_space, self.ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)  # Network for old policy
+        self.pi = policy("pi", self.env.env.image_shape, self.ob_space, self.ac_space, hid_size, num_hid_layers, gpu=gpu)
+        self.oldpi = policy("oldpi", self.env.env.image_shape, self.ob_space, self.ac_space, hid_size, num_hid_layers, gpu=gpu)  # Network for old policy
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
@@ -86,10 +86,11 @@ class PPO(nn.Module):
     ret: Empirical return
     lrmult: learning rate multiplier, updated with schedule    
     '''
-    def forward(self, ob, hid_ob, ac, atarg, _return, lr_mult):
+    def forward(self, image, joint, hid_ob, ac, atarg, _return, lr_mult):
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
-        act_means_old, act_log_stds_old, value_old, dists_old = self.oldpi.forward(ob)
-        act_means_new, act_log_stds_new, value_new, dists_new = self.pi.forward(ob)
+        ob = (image, joint)
+        obj_old, (act_means_old, act_log_stds_old, value_old) = self.oldpi.forward(ob)
+        obj_new, (act_means_new, act_log_stds_new, value_new) = self.pi.forward(ob)
 
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
@@ -109,7 +110,7 @@ class PPO(nn.Module):
 
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
-        hid_loss = torch.mean(torch.pow(dists_new - hid_ob, 2))
+        hid_loss = torch.mean(torch.pow(obj_new - hid_ob, 2))
 
         total_loss = pol_surr + pol_entpen + vf_loss + hid_loss + kl_loss
         losses = [pol_surr, pol_entpen, vf_loss, hid_loss, mean_kl, mean_entropy]
@@ -148,11 +149,11 @@ class PPO(nn.Module):
             segment = seg_generator.__next__()
             self.add_vtarg_and_adv(segment, self.gamma, self.lam)
 
-            ob, hid_ob, ac, atarg, tdlamret = segment["ob"], segment["hid_ob"], segment["ac"], segment["adv"], segment["tdlamret"]
+            image, joint, hid_ob, ac, atarg, tdlamret = segment["image"], segment["joint"], segment["hid_ob"], segment["ac"], segment["adv"], segment["tdlamret"]
             vpredbefore = segment["vpred"] # predicted value function before udpate
             atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
-            d = Dataset(dict(ob=ob, hid_ob=hid_ob, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not self.pi.recurrent)
-            optim_batchsize = self.optim_batchsize or ob.shape[0]
+            d = Dataset(dict(image=image, joint=joint, hid_ob=hid_ob, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not self.pi.recurrent)
+            optim_batchsize = self.optim_batchsize
 
             # update running mean/std for policy
             # if hasattr(self.pi, "ob_rms"): self.pi.ob_rms.update(ob)
@@ -167,9 +168,9 @@ class PPO(nn.Module):
                 losses = [] # list of tuples, each of which gives the loss for a minibatch
                 for batch in d.iterate_once(self.optim_batchsize):
                     self.optimizer.zero_grad()
-                    # batch['ob'] = rearrange_batch_image(batch['ob'])
+                    # batch['image'] = rearrange_batch_image(batch['image'])
                     batch = self.convert_batch_tensor(batch)
-                    total_loss, *newlosses = self.forward(batch["ob"], batch["hid_ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                    total_loss, *newlosses = self.forward(batch["image"], batch["joint"], batch["hid_ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                     total_loss.backward()
                     self.optimizer.step(_step_size=self.optim_stepsize * cur_lrmult)
                     losses.append(torch.stack(newlosses[0], dim=0).view(-1))
@@ -179,9 +180,9 @@ class PPO(nn.Module):
             logger.log("Evaluating losses...")
             losses = []
             for batch in d.iterate_once(self.optim_batchsize):
-                # batch['ob'] = rearrange_batch_image(batch['ob'])
+                # batch['image'] = rearrange_batch_image(batch['image'])
                 batch = self.convert_batch_tensor(batch)
-                _, *newlosses = self.forward(batch["ob"], batch["hid_ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                _, *newlosses = self.forward(batch["image"], batch["joint"], batch["hid_ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 losses.append(torch.stack(newlosses[0], dim=0).view(-1))
             mean_losses = torch.mean(torch.stack(losses, dim=0), dim=0).data.cpu().numpy()
             logger.log(fmt_row(13, mean_losses))
@@ -235,7 +236,8 @@ class PPO(nn.Module):
         t = 0
         ac = env.action_space.sample()  # not used, just so we have the datatype
         new = True  # marks if we're on first timestep of an episode
-        ob, hid_ob = env.reset()
+        (image, joint), hid_ob = env.reset()
+        _image = rearrange_image(image)
 
         cur_ep_ret = 0  # return in current episode
         cur_ep_len = 0  # len of current episode
@@ -243,7 +245,8 @@ class PPO(nn.Module):
         ep_lens = []  # lengths of ...
 
         # Initialize history arrays
-        obs = np.array([ob for _ in range(horizon)])
+        images = np.array([_image for _ in range(horizon)])
+        joints = np.array([joint for _ in range(horizon)])
         hid_obs = np.array([hid_ob for _ in range(horizon)])
         rews = np.zeros(horizon, 'float32')
         vpreds = np.zeros(horizon, 'float32')
@@ -253,14 +256,16 @@ class PPO(nn.Module):
 
         while True:
             prevac = ac
-            # _ob = rearrange_image(ob)
-            _ob = self.convert_tensor(ob)
-            ac, vpred = pi.act(_ob, stochastic=True) # TODO: stochastic arg required?
+            image = rearrange_image(image)
+            _image = self.convert_tensor(image)
+            _joint = self.convert_tensor(joint)
+            ac, vpred = pi.act((_image, _joint), stochastic=True) # TODO: stochastic arg required?
             # Slight weirdness here because we need value function at time T
             # before returning segment [0, T-1] so we get the correct
             # terminal value
             if t > 0 and t % horizon == 0:
-                yield {"ob": obs, "hid_ob": hid_obs, "rew": rews, "vpred": vpreds, "new": news,
+                yield {"image": images, "joint": joints,
+                       "hid_ob": hid_obs, "rew": rews, "vpred": vpreds, "new": news,
                        "ac": acs, "prevac": prevacs, "nextvpred": vpred * (1 - new),
                        "ep_rets": ep_rets, "ep_lens": ep_lens}
                 # Be careful!!! if you change the downstream algorithm to aggregate
@@ -268,14 +273,15 @@ class PPO(nn.Module):
                 ep_rets = []
                 ep_lens = []
             i = t % horizon
-            obs[i] = ob
+            images[i] = image
+            joints[i] = joint
             hid_obs[i] = hid_ob
             vpreds[i] = vpred
             news[i] = new
             acs[i] = ac
             prevacs[i] = prevac
 
-            ob, hid_ob, rew, new, _ = env.step(ac)
+            (image, joint), hid_ob, rew, new, _ = env.step(ac)
             # env.render()
             rews[i] = rew
 
@@ -286,7 +292,7 @@ class PPO(nn.Module):
                 ep_lens.append(cur_ep_len)
                 cur_ep_ret = 0
                 cur_ep_len = 0
-                ob, hid_ob = env.reset()
+                (image, joint), hid_ob = env.reset()
             t += 1
 
 
@@ -335,12 +341,12 @@ class PPO(nn.Module):
         return var
 
 
-# def rearrange_image(ob):
-#     return np.transpose(ob, [2, 0, 1])
-#
-#
-# def rearrange_batch_image(ob):
-#     return np.transpose(ob, [0, 3, 1, 2])
+def rearrange_image(ob):
+    return np.transpose(ob, [2, 0, 1])
+
+
+def rearrange_batch_image(ob):
+    return np.transpose(ob, [0, 3, 1, 2])
 
 
 def flatten_lists(listoflists):
