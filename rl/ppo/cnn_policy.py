@@ -16,7 +16,7 @@ class CnnPolicy(nn.Module):
     self.gpu = gpu
     image_h, image_w, n_channel = image_dim
     obj_com_dim = 3
-    obj_pose_dim = 9
+    obj_pose_dim = 4
     cnn_n_out = obj_com_dim + obj_pose_dim
     ob_dim = ob_space.shape[0]
     mlp_in_dim = ob_dim + cnn_n_out # concat cnn_out and observations
