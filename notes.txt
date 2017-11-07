@@ -1,5 +1,7 @@
 Experiments:
- * hand_cube_rew: works great
+ * actor_dist: promising
+ * vel_ctrl: obj jumps. has bug
+ * cv_quat: promising
 
 today:
  * abb robot API
