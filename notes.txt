@@ -3,24 +3,16 @@ Experiments:
  * vel_ctrl: obj jumps. has bug
  * cv_quat: promising
 
-today:
+this week:
  * abb robot API
  * run once on real robot
- * incorporate pseudo reward for endeffector vs. cube
- * vision
-
-
-this week:
+ * vision: try new experiments. multiple cameras
  * ping pong in simulator
+ * variable start/end position
  * new RL algorithm
 
 
 Ideas:
- * incorporate endeff-obj distance reward to
-   * vel_force_ctrl
-   * rnn
-   * batchnorm
-   * joint_av
  * incorporate sin(), cos() of orientations
 
 
