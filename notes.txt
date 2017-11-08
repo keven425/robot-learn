@@ -6,7 +6,7 @@ Experiments:
 this week:
  * abb robot API
  * run once on real robot
- * vision: try new experiments. multiple cameras
+ * vision: try new experiments. spatial softmax. multiple cameras.
  * ping pong in simulator
  * variable start/end position
  * new RL algorithm
