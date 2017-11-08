@@ -20,25 +20,25 @@ class Config():
     # self.wrap_env_fn = wrap_train
 
     # mujoco config
-    from environment.push_object import PushObjectEnv
+    from environment.pingpong import PingPongEnv
     from ppo.mlp_policy import MlpPolicy
     from common.distributions import DiagGaussianPd
-    self.frame_skip = 10
-    self.frame_per_episode = 3000
+    self.frame_skip = 1
+    self.frame_per_episode = 1500
     self.timestep_per_episode = int(self.frame_per_episode / self.frame_skip)
-    self.env = PushObjectEnv
+    self.env = PingPongEnv
     self.prob_dist = DiagGaussianPd
     self.num_hid_layers = 2
     self.hid_size = 64
     self.num_timesteps = 1e20
-    self.timesteps_per_batch = 2048
+    self.timesteps_per_batch = 4096
     self.policy = MlpPolicy
     self.clip_param = 0.2
     self.beta = 1.
     self.entcoeff = 0.001
     self.optim_epochs = 20
     self.optim_stepsize = 4e-4
-    self.optim_batchsize = 512
+    self.optim_batchsize = 1024
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'

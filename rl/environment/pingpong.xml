@@ -1,0 +1,31 @@
+<mujoco model="dobot_push">
+    <!--default-->
+    <default>
+        <!--need to define ctrllimited='false' in dobot.xml, because velocity config will override polisition config-->
+        <position kp="1"/>
+        <velocity kv="10" ctrlrange='-1 1' ctrllimited='true'/>
+        <!--<geom friction="1 0.1 0.1"/>-->
+    </default>
+
+    <asset>
+        <texture builtin="checker" type="2d" height="100" width="100" mark="none" markrgb="1 1 1" name="square_box" rgb1="0. 0. 0." rgb2="1. 1. 1."/>
+        <material name="plane" texrepeat="5 5" texture="square_box"/>
+    </asset>
+
+    <!--environment-->
+    <worldbody>
+        <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
+        <!--table-->
+        <geom type="plane" material="plane" size="0.15 0.15 0.1"/>
+        <!--cube-->
+        <body name="cube" pos="0 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".005" diaginertia="1 1 1" />
+            <geom name="ball" solref="0.02 0.1" pos="0 0 0.5" size="0.02 0.02 0.02" type="sphere"/>
+            <freejoint name="free_joint"/>
+        </body>
+    </worldbody>
+
+    <!--robot-->
+    <include file="./abb.xml"/>
+</mujoco>
+
