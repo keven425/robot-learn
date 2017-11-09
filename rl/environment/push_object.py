@@ -8,6 +8,9 @@ from gym.utils import seeding
 import numpy as np
 import mujoco_py
 
+DEFAULT_GOAL_POS = np.array([.15, .15])
+
+
 
 class PushObjectEnv(utils.EzPickle):
 
@@ -23,7 +26,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([.15, .15])
+        self.goal_pos = DEFAULT_GOAL_POS
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -164,7 +167,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self):
+    def reset(self, rand_goal_pos=False):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -172,7 +175,10 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model()
+        if rand_goal_pos:
+            goal_pos = np.random.uniform(size=(2,)) * 0.15
+        else:
+            goal_pos = DEFAULT_GOAL_POS
         hidden_ob = self.get_hidden_ob()
         return ob, hidden_ob
 
@@ -276,10 +282,11 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self):
+    def reset_model(self, goal_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
+        self.goal_pos = goal_pos
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
@@ -378,6 +385,7 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
+        goal_pos = self.goal_pos
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
         # normalize pos
@@ -385,6 +393,7 @@ class PushObjectEnv(utils.EzPickle):
         cube_com = self.get_body_com(self.obj_name)
         cube_pose = self.get_body_xmat(self.obj_name).reshape(-1)
         return np.concatenate([
+            goal_pos,
             cube_com,
             cube_pose,
             np.cos(actuator_pos),
