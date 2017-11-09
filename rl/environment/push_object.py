@@ -164,7 +164,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self):
+    def reset(self, rand_init_pos=False):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -172,7 +172,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model()
+        ob = self.reset_model(rand_init_pos)
         hidden_ob = self.get_hidden_ob()
         return ob, hidden_ob
 
@@ -276,10 +276,16 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self):
+    def reset_model(self, rand_init_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
+        init_qpos = self.init_qpos
+        if rand_init_pos:
+            obj_pos = np.random.uniform(size=[2,]) * 0.15
+        else:
+            obj_pos = [0., 0.]
+        init_qpos[:2] = obj_pos
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
