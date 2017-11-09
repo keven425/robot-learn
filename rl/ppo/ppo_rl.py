@@ -36,8 +36,7 @@ class PPO(nn.Module):
                  adam_epsilon=1e-5,
                  schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
                  record_video_freq=100,
-                 log_dir='',
-                 load_path=''
+                 log_dir=''
                  ):
         super(PPO, self).__init__()
         self.env = env
@@ -234,7 +233,7 @@ class PPO(nn.Module):
         t = 0
         ac = env.action_space.sample()  # not used, just so we have the datatype
         new = True  # marks if we're on first timestep of an episode
-        ob = env.reset(rand_init_pos=True)
+        ob = env.reset(rand_goal_pos=True)
 
         cur_ep_ret = 0  # return in current episode
         cur_ep_len = 0  # len of current episode
@@ -283,12 +282,12 @@ class PPO(nn.Module):
                 ep_lens.append(cur_ep_len)
                 cur_ep_ret = 0
                 cur_ep_len = 0
-                ob = env.reset(rand_init_pos=True)
+                ob = env.reset(rand_goal_pos=True)
             t += 1
 
 
     def record_video(self, pi, env):
-        ob = env.reset(rand_init_pos=True)
+        ob = env.reset(rand_goal_pos=True)
         done = False
         env.env.start_record_video()
         while not done:
@@ -297,7 +296,7 @@ class PPO(nn.Module):
             ob, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
-        env.reset(rand_init_pos=True)
+        env.reset(rand_goal_pos=True)
 
 
 

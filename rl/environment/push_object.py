@@ -9,6 +9,9 @@ from gym.utils import seeding
 import numpy as np
 import mujoco_py
 
+DEFAULT_GOAL_POS = np.array([.15, .15])
+
+
 
 class PushObjectEnv(utils.EzPickle):
 
@@ -24,7 +27,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([0., 0.])
+        self.goal_pos = DEFAULT_GOAL_POS
         self.rew_scale = 1.
         self.dist_thresh = 0.01
         self.metadata = {
@@ -140,7 +143,7 @@ class PushObjectEnv(utils.EzPickle):
         return ob, reward, done, dict()
 
 
-    def reset(self, rand_init_pos=False):
+    def reset(self, rand_goal_pos=False):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -148,7 +151,11 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model(rand_init_pos)
+        if rand_goal_pos:
+            goal_pos = np.random.uniform(size=(2,)) * 0.15
+        else:
+            goal_pos = DEFAULT_GOAL_POS
+        ob = self.reset_model(goal_pos)
         return ob
 
 
@@ -252,25 +259,11 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self, rand_init_pos):
+    def reset_model(self, goal_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
-        init_qpos = self.init_qpos
-        if rand_init_pos:
-            # center around zero, with radius 0.03
-            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.075
-            angle = np.random.uniform(-math.pi, math.pi)
-            x = np.cos(angle) * radius
-            y = np.sin(angle) * radius
-            obj_pos = np.array([x, y])
-        else:
-            obj_pos = [0., 0.]
-        init_qpos[:2] = obj_pos
-        dist_sq_default = np.sum(np.square([.15, .15]))
-        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
-        self.rew_scale = dist_sq_default / dist_sq_goal
+        self.goal_pos = goal_pos
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
@@ -369,6 +362,7 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
+        goal_pos = self.goal_pos
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
         # actuator velocity can be out of [-1, 1] range, clip
@@ -377,6 +371,7 @@ class PushObjectEnv(utils.EzPickle):
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
         return np.concatenate([
+            goal_pos,
             cube_com,
             np.cos(actuator_pos),
             np.sin(actuator_pos),
