@@ -234,7 +234,7 @@ class PPO(nn.Module):
         t = 0
         ac = env.action_space.sample()  # not used, just so we have the datatype
         new = True  # marks if we're on first timestep of an episode
-        ob = env.reset()
+        ob = env.reset(rand_init_pos=True)
 
         cur_ep_ret = 0  # return in current episode
         cur_ep_len = 0  # len of current episode
@@ -283,12 +283,12 @@ class PPO(nn.Module):
                 ep_lens.append(cur_ep_len)
                 cur_ep_ret = 0
                 cur_ep_len = 0
-                ob = env.reset()
+                ob = env.reset(rand_init_pos=True)
             t += 1
 
 
     def record_video(self, pi, env):
-        ob = env.reset()
+        ob = env.reset(rand_init_pos=True)
         done = False
         env.env.start_record_video()
         while not done:
@@ -297,7 +297,7 @@ class PPO(nn.Module):
             ob, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
-        env.reset()
+        env.reset(rand_init_pos=True)
 
 
 
