@@ -7,11 +7,12 @@ from common.pytorch_util import softmax2d_p
 
 
 class CnnEncoder(nn.Module):
-    def __init__(self, name, image_h, image_w, n_channel, n_out, n_layers=6):
+    def __init__(self, name, image_h, image_w, n_channel, n_out, n_layers=6, gpu=False):
         super(CnnEncoder, self).__init__()
         self.recurrent = False
         self.name = name
         self.n_out = n_out
+        self.gpu = gpu
 
         n_c_out = 8
         self.conv1 = nn.Conv2d(n_channel, n_c_out, 5, 1, 2)
@@ -54,6 +55,9 @@ class CnnEncoder(nn.Module):
 
         xs = Variable(torch.FloatTensor(np.arange(-1., 1., 2. / 128)), requires_grad=False)
         ys = Variable(torch.FloatTensor(np.arange(-1., 1., 2. / 128)).view(-1, 1), requires_grad=False)
+        if self.gpu:
+            xs = xs.cuda()
+            ys = ys.cuda()
         x_avg = torch.mul(_softmax, xs)
         x_avg = torch.sum(x_avg, dim=-1)
         x_avg = torch.sum(x_avg, dim=-1)
