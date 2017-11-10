@@ -283,10 +283,13 @@ class PushObjectEnv(utils.EzPickle):
         """
         init_qpos = self.init_qpos
         if rand_init_pos:
-            obj_pos = np.random.uniform(size=[2,]) * 0.15
+            obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
+        dist_sq_default = np.sum(np.square(self.goal_pos))
+        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
+        self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
