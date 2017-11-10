@@ -177,7 +177,7 @@ class PushObjectEnv(utils.EzPickle):
         self.t = 0
         self.sim.reset()
         if rand_goal_pos:
-            goal_pos = np.random.uniform(size=(2,)) * 0.15
+            goal_pos = np.random.uniform(size=(2,)) * 0.3 - .15
         else:
             goal_pos = DEFAULT_GOAL_POS
         hidden_ob = self.get_hidden_ob()
