@@ -38,7 +38,7 @@ class Config():
     self.entcoeff = 0.001
     self.optim_epochs = 10
     self.optim_stepsize = 4e-4
-    self.optim_batchsize = 128
+    self.optim_batchsize = 160
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
