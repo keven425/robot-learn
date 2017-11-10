@@ -7,6 +7,17 @@ def softmax_p(x):
   return e_x / torch.sum(e_x, dim=1)
 
 
+def softmax2d_p(x):
+  _max = torch.max(x, dim=-1)[0]
+  _max = torch.max(_max, dim=-1)[0]
+  _max = _max.view([_max.size()[0], _max.size()[1], 1, 1])
+  e_x = torch.exp(x - _max)
+  _sum = torch.sum(e_x, dim=-1)
+  _sum = torch.sum(_sum, dim=-1)
+  _sum = _sum.view([_sum.size()[0], _sum.size()[1], 1, 1])
+  return e_x / _sum
+
+
 def log_prob(act_is, logits):
   act_logp = softmax_logp(logits)
   return torch.gather(act_logp, 1, act_is).view(-1)
