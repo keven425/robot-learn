@@ -23,7 +23,7 @@ class Config():
     from environment.pingpong import PingPongEnv
     from ppo.mlp_policy import MlpPolicy
     from common.distributions import DiagGaussianPd
-    self.frame_skip = 1
+    self.frame_skip = 5
     self.frame_per_episode = 1500
     self.timestep_per_episode = int(self.frame_per_episode / self.frame_skip)
     self.env = PingPongEnv
