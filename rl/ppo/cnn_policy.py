@@ -21,7 +21,7 @@ class CnnPolicy(nn.Module):
     cnn_n_feat = 64
     ob_dim = ob_space.shape[0]
     mlp_in_dim = ob_dim + cnn_n_feat  # concat cnn_out and observations
-    self.cnn_encoder = CnnEncoder(name, image_h, image_w, n_channel, n_out=cnn_n_out)
+    self.cnn_encoder = CnnEncoder(name, image_h, image_w, n_channel, n_out=cnn_n_out, gpu=gpu)
     self.mlp_policy = MlpPolicy(name, mlp_in_dim, ac_space, hid_size, num_hid_layers, gpu=gpu)
 
 
