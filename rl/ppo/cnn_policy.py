@@ -18,18 +18,19 @@ class CnnPolicy(nn.Module):
     obj_com_dim = 3
     obj_pose_dim = 4
     cnn_n_out = obj_com_dim + obj_pose_dim
+    cnn_n_feat = 64
     ob_dim = ob_space.shape[0]
-    mlp_in_dim = ob_dim + cnn_n_out # concat cnn_out and observations
+    mlp_in_dim = ob_dim + cnn_n_feat  # concat cnn_out and observations
     self.cnn_encoder = CnnEncoder(name, image_h, image_w, n_channel, n_out=cnn_n_out)
     self.mlp_policy = MlpPolicy(name, mlp_in_dim, ac_space, hid_size, num_hid_layers, gpu=gpu)
 
 
   def forward(self, ob):
     image, joint = ob
-    cnn_out = self.cnn_encoder.forward(image)
-    mlp_in = torch.cat([cnn_out, joint], dim=-1)
+    cnn_pred, cnn_feat = self.cnn_encoder.forward(image)
+    mlp_in = torch.cat([cnn_feat, joint], dim=-1)
     mlp_out = self.mlp_policy.forward(mlp_in)
-    return cnn_out, mlp_out
+    return cnn_pred, mlp_out
 
 
   def act(self, ob, stochastic=True):
