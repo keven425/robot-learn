@@ -32,27 +32,26 @@ class PingPongEnv(utils.EzPickle):
         self.t = 0
         self.max_timestep = max_timestep
 
-        pos_actuators = [actuator for actuator in self.model.actuator_names if 'position' in actuator]
+        force_actuators = [actuator for actuator in self.model.actuator_names if 'force' in actuator]
         vel_actuators = [actuator for actuator in self.model.actuator_names if 'velocity' in actuator]
-        assert(len(pos_actuators) + len(vel_actuators) == len(self.model.actuator_names))
-        self.pos_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in pos_actuators]
+        assert (len(force_actuators) + len(vel_actuators) == len(self.model.actuator_names))
+        self.force_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in force_actuators]
         self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
-        self.actuator_ids = self.pos_actuator_ids
+        self.actuator_ids = self.vel_actuator_ids
         self.act_dim = len(self.actuator_ids)
 
         # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
-        pos_actuators_joints = self.model.actuator_trnid[self.pos_actuator_ids][:, 0]
-        self.joint_ranges = [self.model.jnt_range[joint] for joint in pos_actuators_joints]
+        force_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
+        self.joint_ranges = [self.model.jnt_range[joint] for joint in force_actuators_joints]
         self.joint_ranges = np.array(self.joint_ranges)
 
         # initial position/velocity of robot and box
-        self.init_qpos = np.zeros_like(self.data.qpos.ravel())
-        self.init_qvel = np.zeros_like(self.data.qvel.ravel())
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
         n_vel_actuators = len(self.vel_actuator_ids)
         pos_ctrl = np.zeros(shape=[n_vel_actuators])
         pos_ctrl = self.denormalize_pos(pos_ctrl)
         self.init_qpos[-n_vel_actuators:] = pos_ctrl
-
         _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
         self.obs_dim = _ob.size
@@ -62,7 +61,7 @@ class PingPongEnv(utils.EzPickle):
         high = bounds[:, 1]
         self.action_space = Box(low, high)
 
-        high = np.inf*np.ones(self.obs_dim)
+        high = np.inf * np.ones(self.obs_dim)
         low = -high
         self.observation_space = Box(low, high)
         self.reward_range = (-np.inf, np.inf)
@@ -301,14 +300,13 @@ class PingPongEnv(utils.EzPickle):
         # print(str(qpos_ctrl))
 
         # compute velocity control
-        n_vel_actuators = len(self.vel_actuator_ids)
-        vel_ctrl = np.zeros(shape=[n_vel_actuators])
+        n_vel_actuators = len(self.force_actuator_ids)
+        force_ctrl = np.zeros(shape=[n_vel_actuators])
         # clip by -1, 1
-        ctrl = np.clip(ctrl, -1., 1.)
+        vel_ctrl = np.clip(ctrl, -1., 1.)
         # scale position control up to joint range
-        pos_ctrl = self.denormalize_pos(ctrl)
-        self.sim.data.ctrl[self.actuator_ids] = pos_ctrl
-        self.sim.data.ctrl[self.vel_actuator_ids] = vel_ctrl  # set velocity to zero for damping
+        self.sim.data.ctrl[self.actuator_ids] = vel_ctrl
+        self.sim.data.ctrl[self.force_actuator_ids] = force_ctrl  # set velocity to zero for damping
         self.sim.step()
         self.sim.forward()
 
@@ -360,8 +358,8 @@ class PingPongEnv(utils.EzPickle):
 
 
     def _get_obs(self):
-        actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
-        actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
+        actuator_pos = self.data.actuator_length[self.actuator_ids]
+        actuator_vel = self.data.actuator_velocity[self.actuator_ids]
         # actuator velocity can be out of [-1, 1] range, clip
         # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
@@ -403,20 +401,14 @@ if __name__ == '__main__':
         #     if done:
         #         env.reset()
         # env.stop_record_video()
-        for i in range(10000):
+        for i in range(500):
             env.step([0., 0., 0., 0., 0., 0.])
             env.render()
-            cube_com = env.get_body_com("cube")
-            cube_z = cube_com[-1]
-            if cube_z > 0 or cube_z < -0.3:
-                print('z out of range')
-                exit(0)
-            print(str(cube_com))
-        # for i in range(1500):
-        #     # env.step([1., 1., 1., 1., 1., 1.])
-        #     env.step([0., 1., 1., 0., 0., 0.])
-        #     env.render()
-        # for i in range(1500):
-        #     # env.step([-1., -1., -1., -1., -1., -1.])
-        #     env.step([0., -1., -1., 0., 0., 0.])
-        #     env.render()
+        for i in range(500):
+            # env.step([1., 1., 1., 1., 1., 1.])
+            env.step([0., 1., 1., 0., 0., 0.])
+            env.render()
+        for i in range(500):
+            # env.step([-1., -1., -1., -1., -1., -1.])
+            env.step([0., -1., -1., 0., 0., 0.])
+            env.render()
