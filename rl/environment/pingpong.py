@@ -390,7 +390,7 @@ def save_video(queue, filename, fps):
 
 
 if __name__ == '__main__':
-    env = PingPongEnv(frame_skip=5)
+    env = PingPongEnv(frame_skip=1)
     env.reset()
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
