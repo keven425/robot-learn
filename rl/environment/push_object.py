@@ -142,15 +142,8 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def get_hidden_ob(self):
-        dsq_obj_goal = self.get_dsq_obj_goal()
-
-        # distance between object and robot end-effector
-        dsq_endeff_obj = self.get_dsq_endeff_obj()
-
-        # use distances as hidden observations
-        dist_obj_goal = np.sqrt(dsq_obj_goal)
-        dist_endeff_obj = np.sqrt(dsq_endeff_obj)
-        return np.array([dist_obj_goal, dist_endeff_obj])
+        endeff_pos = self.get_body_com(self.endeff_name)
+        return np.array(endeff_pos)
 
 
     def get_dsq_obj_goal(self):
@@ -437,11 +430,11 @@ if __name__ == '__main__':
         for i in range(1500):
             env.step([0., 0., 0., 0., 0., 0.])
             env.render()
-        for i in range(1500):
-            # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 1., 1., 0., 0., 0.])
-            env.render()
-        for i in range(1500):
-            # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([0., -1., -1., 0., 0., 0.])
-            env.render()
+        # for i in range(1500):
+        #     # env.step([1., 1., 1., 1., 1., 1.])
+        #     env.step([0., 1., 1., 0., 0., 0.])
+        #     env.render()
+        # for i in range(1500):
+        #     # env.step([-1., -1., -1., -1., -1., -1.])
+        #     env.step([0., -1., -1., 0., 0., 0.])
+        #     env.render()

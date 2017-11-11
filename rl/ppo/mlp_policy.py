@@ -30,7 +30,7 @@ class MlpPolicy(nn.Module):
             n_in = hid_size
         self.fc_values = nn.ModuleList(self.fc_values)
         self.fc_value = nn.Linear(hid_size, 1)
-        self.fc_dist = nn.Linear(hid_size, 2) # predict distances
+        self.fc_endeff_pos = nn.Linear(hid_size, 3) # predict distances
 
         n_in = ob_space.shape[0]
         self.fc_acts = []
@@ -50,7 +50,7 @@ class MlpPolicy(nn.Module):
 
         # configure weights
         init_weights_fc(self.fc_value, 1.0)
-        init_weights_fc(self.fc_dist, 1.0)
+        init_weights_fc(self.fc_endeff_pos, 1.0)
         init_weights_fc(self.fc_act, 0.01)
         for fc in self.fc_values:
             init_weights_fc(fc, 1.0)
@@ -63,15 +63,15 @@ class MlpPolicy(nn.Module):
         for fc in self.fc_acts:
             _x = self.tanh(fc(_x))
         act_means = self.tanh(self.fc_act(_x))
-        dists = self.fc_dist(_x)
 
         _x = x
         for fc in self.fc_values:
             _x = self.tanh(fc(_x))
         value = self.fc_value(_x).view(-1) # flatten
+        endeff_pos = self.fc_endeff_pos(_x)
 
         act_log_stds = act_means * 0. + self.act_log_stds
-        return act_means, act_log_stds, value, dists
+        return act_means, act_log_stds, value, endeff_pos
 
 
     def act(self, ob, stochastic=True):
