@@ -1,9 +1,12 @@
 Experiments:
  * actor_dist: promising
- * vel_ctrl: obj jumps. has bug
- * cv_quat: promising
+ * cv_pos: doesn't work
+ * vel_force_ctrl: only learns approaching obj. doesn't learn how to move
+ * pingpong: frameskip 1 not learning. frameskip 10 ball sticks on pedal eventually
+
 
 this week:
+ * debug vary start/end: feeding position correctly?
  * abb robot API
  * run once on real robot
  * vision: try new experiments. spatial softmax. multiple cameras.
@@ -14,6 +17,10 @@ this week:
 
 Ideas:
  * incorporate sin(), cos() of orientations
+ * pingpong: always use frameskip 1. more realistic
+ * cv: input diff b/t goal & current image
+ * vary: fix position in a given batch
+ * cv: predict endeffector position
 
 
 Lessons:
