@@ -140,15 +140,8 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def get_hidden_ob(self):
-        dsq_obj_goal = self.get_dsq_obj_goal()
-
-        # distance between object and robot end-effector
-        dsq_endeff_obj = self.get_dsq_endeff_obj()
-
-        # use distances as hidden observations
-        dist_obj_goal = np.sqrt(dsq_obj_goal)
-        dist_endeff_obj = np.sqrt(dsq_endeff_obj)
-        return np.array([dist_obj_goal, dist_endeff_obj])
+        endeff_pos = self.get_body_com(self.endeff_name)
+        return np.array(endeff_pos)
 
 
     def get_dsq_obj_goal(self):
@@ -278,6 +271,7 @@ class PushObjectEnv(utils.EzPickle):
     @property
     def spec(self):
         return None
+
 
     def reset_model(self, rand_init_pos):
         """
