@@ -128,14 +128,14 @@ class PingPongEnv(utils.EzPickle):
         # if ball too high or too low (missed pedal)
         if obj_pos_z > 0 or obj_pos_z < -0.3:
             # penalty
-            reward = -.05
+            reward = -.005
         else:
             # reward for staying near center
             dist_center = np.sum(np.square(obj_pos_xy - [0., 0.]))
-            rew_center = 0.01 * np.exp(-100. * dist_center)
+            rew_center = 0.002 * np.exp(-100. * dist_center)
 
             # reward for staying alive
-            rew_alive = .01
+            rew_alive = .002
             reward = rew_center + rew_alive
 
         # reward_ctrl = -np.square(action).mean()
