@@ -17,6 +17,7 @@ this week:
 
 Ideas:
  * incorporate sin(), cos() of orientations
+ * forward kinematics to limit endeffector positions within bounding box
  * pingpong: always use frameskip 1. more realistic
  * cv: input diff b/t goal & current image
  * vary: fix position in a given batch
