@@ -1,36 +1,37 @@
 <mujoco model="abb_arm">
     <compiler angle="radian" />
     <size njmax="500" nconmax="100" />
+    <contact><exclude body1="bigarm_link" body2="forearm_link"></exclude></contact>
     <worldbody>
         <body name="base_dummy_link" pos="-0.25 0 0">
             <inertial pos="0 0 0" mass="0" diaginertia="0 0 0" />
             <body name="base_link" pos="0 0 0">
                 <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".5" diaginertia="1 1 0.5" />
-                <geom size="0.0475 0.0385 0.015" pos="0 0 0.015" type="box" rgba="1 1 1 1" />
-                <body name="shoulder_link" pos="0 0 0.015">
+                <geom size="0.0475 0.0385 0.01" pos="0 0 0.015" type="box" rgba="1 1 1 1" />
+                <body name="shoulder_link" pos="0 0 0.03">
                     <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                    <joint name="shoulder_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.35619 2.35619" />
-                    <geom size="0.06 0.03" pos="0 0 0.03" type="cylinder" rgba="0.8 0 0 1" />
-                    <body name="bigarm_link" pos="0 0 0.065">
+                    <joint name="shoulder_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.094 2.094" />
+                    <geom size="0.06 0.03 0.025" pos="0 0 0.025" type="box" rgba="0.8 0 0 1" />
+                    <body name="bigarm_link" pos="0.04 0 0.05">
                         <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
                         <joint name="bigarm_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-1.48353 1.48353" />
-                        <geom size="0.015 0.015 0.1" pos="0 0 0.0675" type="box" rgba="1 1 1 1" />
-                        <body name="forearm_link" pos="0 0 0.145">
+                        <geom size="0.02 0.02 0.065" pos="0 0 0.065" type="box" rgba="1 1 1 1" />
+                        <body name="elbow_link" pos="0 0 0.13">
                             <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                            <joint name="forearm_joint" pos="0 0 0" axis="0 1 0" limited="true" range="0.270796 2.8708" />
-                            <geom size="0.02 0.09" pos="0 0 0.0935" type="cylinder" rgba="0 0 0 1" />
-                            <body name="gripper_link" pos="0 0 0.18">
+                            <joint name="elbow_joint" pos="0 0 0" axis="0 1 0" limited="true" range="0.785 2.356" />
+                            <geom size="0.02 0.01" pos="0 0 0.01" type="cylinder" rgba="0.5 0.5 0 1" />
+                            <body name="forearm_link" pos="0 0 0.02">
                                 <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                                <joint name="gripper_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-2.36 2.36" />
-                                <geom size="0.01 0.015 0.015" pos="0 0 0.0115" type="box" rgba="0.8 0 0 1" />
-                                <body name="chuck_link" pos="0 0 0.1">
+                                <joint name="forearm_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.094 2.094" />
+                                <geom size="0.0125 0.0125 0.08" pos="0 0 0.08" type="box" rgba="1 1 1 1" />
+                                <body name="hand_link" pos="0 0 0.16">
                                     <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                                    <joint name="chuck_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-2.36 2.36" />
-                                    <geom size="0.02 0.0125" pos="0 0 -0.07" type="cylinder" rgba="0.5 0.5 0 1" />
-                                    <body name="endeffector" pos="0 0 -0.07">
+                                    <joint name="hand_joint" pos="0 0 0" axis="0 1 0" limited="true" range="-2.094 2.094" />
+                                    <geom size="0.01 0.005 0.015" pos="0 0 0.015" type="box" rgba="0.8 0 0 1" />
+                                    <body name="endeffector" pos="0 0 0.03">
                                         <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
-                                        <joint name="hand_joint" pos="0 0 0" axis="1 0 0" limited="true" range="-2.36 2.36" />
-                                        <geom size="0.005 0.04" pos="0 0 0.047" type="cylinder" rgba="1 1 1 1" />
+                                        <joint name="endeff_joint" pos="0 0 0.01" axis="0 0 1" limited="true" range="-2.094 2.094" />
+                                        <geom size="0.04 0.0025 0.0025" pos="-0.04 0 0.0025" type="box" rgba="1 1 1 1" />
                                     </body>
                                 </body>
                             </body>
@@ -44,15 +45,15 @@
         <!--need to define ctrllimited='false' for <position>, because velocity config will override polisition config-->
 		<position name="shoulder_position" joint="shoulder_joint" ctrllimited='false'/>
 		<position name="bigarm_position" joint="bigarm_joint" ctrllimited='false'/>
+        <position name="elbow_position" joint="elbow_joint" ctrllimited='false'/>
         <position name="forearm_position" joint="forearm_joint" ctrllimited='false'/>
-        <position name="gripper_position" joint="gripper_joint" ctrllimited='false'/>
-        <position name="chuck_position" joint="chuck_joint" ctrllimited='false'/>
         <position name="hand_position" joint="hand_joint" ctrllimited='false'/>
+        <position name="endeff_position" joint="endeff_joint" ctrllimited='false'/>
         <velocity name="shoulder_velocity" joint="shoulder_joint"/>
 		<velocity name="bigarm_velocity" joint="bigarm_joint"/>
+        <velocity name="elbow_velocity" joint="elbow_joint"/>
         <velocity name="forearm_velocity" joint="forearm_joint"/>
-        <velocity name="gripper_velocity" joint="gripper_joint"/>
-        <velocity name="chuck_velocity" joint="chuck_joint"/>
         <velocity name="hand_velocity" joint="hand_joint"/>
+        <velocity name="endeff_velocity" joint="endeff_joint"/>
 	</actuator>
 </mujoco>

@@ -401,9 +401,9 @@ if __name__ == '__main__':
             env.render()
         for i in range(1500):
             # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 1., 1., 0., 0., 0.])
+            env.step([0., 0., 1., 0., 0., 0.])
             env.render()
-        for i in range(1500):
-            # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([0., -1., -1., 0., 0., 0.])
-            env.render()
+        # for i in range(1500):
+        #     env.step([-1., -1., -1., -1., -1., -1.])
+        #     # env.step([0., -1., -1., 0., 0., 0.])
+        #     env.render()
