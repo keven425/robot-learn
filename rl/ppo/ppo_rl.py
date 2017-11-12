@@ -89,8 +89,8 @@ class PPO(nn.Module):
     def forward(self, image, joint, hid_ob, ac, atarg, _return, lr_mult):
         self.clip_param = self.clip_param * lr_mult  # Annealed cliping parameter epislon
         ob = (image, joint)
-        obj_old, (act_means_old, act_log_stds_old, value_old) = self.oldpi.forward(ob)
-        obj_new, (act_means_new, act_log_stds_new, value_new) = self.pi.forward(ob)
+        pos_old, (act_means_old, act_log_stds_old, value_old) = self.oldpi.forward(ob)
+        pos_new, (act_means_new, act_log_stds_new, value_new) = self.pi.forward(ob)
 
         kl_old_new = self.prob_dist.kl(act_means_old, act_means_new, act_log_stds_old, act_log_stds_new)
         _entropy = self.prob_dist.entropy(act_log_stds_new)
@@ -110,7 +110,7 @@ class PPO(nn.Module):
 
         assert(value_new.size() == _return.size())
         vf_loss = torch.mean(torch.pow(value_new - _return, 2))
-        hid_loss = torch.mean(torch.pow(obj_new - hid_ob, 2))
+        hid_loss = torch.mean(torch.pow(pos_new - hid_ob, 2))
 
         total_loss = pol_surr + pol_entpen + vf_loss + hid_loss + kl_loss
         losses = [pol_surr, pol_entpen, vf_loss, hid_loss, mean_kl, mean_entropy]
