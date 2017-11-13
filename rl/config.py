@@ -31,14 +31,14 @@ class Config():
     self.num_hid_layers = 2
     self.hid_size = 64
     self.num_timesteps = 1e20
-    self.timesteps_per_batch = 2048
+    self.timesteps_per_batch = 32768
     self.policy = MlpPolicy
     self.clip_param = 0.2
     self.beta = 1.
     self.entcoeff = 0.001
     self.optim_epochs = 20
     self.optim_stepsize = 4e-4
-    self.optim_batchsize = 512
+    self.optim_batchsize = 4096
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
