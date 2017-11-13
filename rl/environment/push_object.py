@@ -23,7 +23,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([.15, .15])
+        self.goal_pos = np.array([0., 0.])
         self.rew_scale = 1.
         self.dist_thresh = 0.01
         self.metadata = {
@@ -256,11 +256,12 @@ class PushObjectEnv(utils.EzPickle):
         """
         init_qpos = self.init_qpos
         if rand_init_pos:
+            # center around zero
             obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
-        dist_sq_default = np.sum(np.square(self.goal_pos))
+        dist_sq_default = np.sum(np.square([.15, .15]))
         dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
         self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
