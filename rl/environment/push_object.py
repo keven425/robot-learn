@@ -358,14 +358,11 @@ class PushObjectEnv(utils.EzPickle):
         # normalize pos
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
-        cube_pose = self.get_body_xmat("cube").reshape(-1)
         return np.concatenate([
             cube_com,
-            cube_pose,
             np.cos(actuator_pos),
             np.sin(actuator_pos),
-            actuator_pos,
-            actuator_vel
+            actuator_pos
         ])
 
 
