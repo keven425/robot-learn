@@ -273,7 +273,7 @@ class PPO(nn.Module):
             prevacs[i] = prevac
 
             ob, rew, new, _ = env.step(ac)
-            env.render()
+            # env.render()
             rews[i] = rew
 
             cur_ep_ret += rew
