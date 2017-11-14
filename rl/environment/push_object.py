@@ -23,8 +23,8 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([.15, .15])
-        self.dist_thresh = 0.01
+        self.goal_pos = np.array([.0, .0])
+        self.start_pos = np.array([.1, .1])
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
             'video.frames_per_second': int(np.round(1.0 / self.dt))
@@ -48,6 +48,8 @@ class PushObjectEnv(utils.EzPickle):
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
         self.init_qvel = self.data.qvel.ravel().copy()
+        self.init_qpos[:2] = self.start_pos
+        self.reset()
         _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
         self.obs_dim = _ob.size
@@ -121,12 +123,12 @@ class PushObjectEnv(utils.EzPickle):
 
         # distance between object and goal
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * np.exp(-100. * dist_sq)
+        rew_obj_goal = 0.1 * np.exp(-225. * dist_sq)
 
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
         dist_sq = np.sum(np.square(endeff_pos - obj_pos))
-        rew_endeff_obj = 0.02 * np.exp(-100. * dist_sq)
+        rew_endeff_obj = 0.02 * np.exp(-225. * dist_sq)
         reward = rew_obj_goal + rew_endeff_obj
 
         # reward_ctrl = -np.square(action).mean()
