@@ -19,7 +19,7 @@ def main():
     parser.add_argument('--gpu', action='store_true', help='enable GPU mode', default=False)
     parser.add_argument('--log', help='log directory', type=str, default='')
     parser.add_argument('--load', help='load path of model', type=str, default='')
-    parser.add_argument('--test', action='store_true', help='test mode', type=str, default=False)
+    parser.add_argument('--test', action='store_true', help='test mode', default=False)
     args = parser.parse_args()
     pp = pprint.PrettyPrinter(indent=1)
     print(pp.pformat(args))
