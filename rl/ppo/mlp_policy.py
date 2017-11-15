@@ -30,7 +30,7 @@ class MlpPolicy(nn.Module):
             n_in = hid_size
         self.fc_values = nn.ModuleList(self.fc_values)
         self.fc_value = nn.Linear(hid_size, 1)
-        self.fc_endeff_pos = nn.Linear(hid_size, 3) # predict distances
+        self.fc_endeff_pos = nn.Linear(hid_size, 3) # predict position
 
         n_in = ob_space.shape[0]
         self.fc_acts = []
