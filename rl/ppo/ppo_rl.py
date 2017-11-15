@@ -36,7 +36,8 @@ class PPO(nn.Module):
                  adam_epsilon=1e-5,
                  schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
                  record_video_freq=100,
-                 log_dir=''
+                 log_dir='',
+                 load_path=''
                  ):
         super(PPO, self).__init__()
         self.env = env
@@ -71,6 +72,10 @@ class PPO(nn.Module):
         if self.gpu:
             self.pi.cuda()
             self.oldpi.cuda()
+        if load_path:
+            print('loading weights from: ' + load_path)
+            self.pi.load_state_dict(torch.load(load_path))
+            self.oldpi.load_state_dict(torch.load(load_path))
         # only gradient descent on new policy
         self.optimizer = AdamVariableLr(self.pi.parameters(), lr=self.optim_stepsize, eps=self.adam_epsilon)
         self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
