@@ -259,7 +259,7 @@ class PushObjectEnv(utils.EzPickle):
         if rand_init_pos:
             # center around zero, with radius 0.03
             # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.03
+            radius = 0.075
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
