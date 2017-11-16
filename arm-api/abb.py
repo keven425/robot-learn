@@ -26,7 +26,7 @@ class Arm(object):
         velocity_scale: convert unitless range (-1, 1) to velocity in
         microseconds / second
         """
-        self.port="/dev/ttyUSB0"
+        self.port="/dev/cu.usbmodem1421"
 
         try:
             self.dev = serial.Serial(self.port, 9600, timeout=5, parity=serial.PARITY_NONE,
@@ -136,7 +136,7 @@ class Arm(object):
 
         self.dev.write(chain)
         response =  self.dev.read(2)
-        print response
+        print(response)
         # self.dev.close()
 
     def _scaled_position(self, axis, position):
@@ -212,7 +212,7 @@ class ServoControl(wx.Frame):
   def __init__(self, *args, **kw):
     super(ServoControl, self).__init__(*args, **kw)
     self.root=sys.path[0]
-    self.port="/dev/ttyUSB0"
+    self.port="/dev/cu.usbmodem1421"
     self.channels=8
     self.InitUI()
     # ser = serial.Serial(self.Port)
@@ -274,7 +274,7 @@ class channel():
     ser.write(chain)
     # ser.write(b"#2P1900T100\r\n")
     response =  ser.read(2)
-    print response
+    print(response)
     ser.close()
 
 class MyApp(wx.App):
