@@ -25,6 +25,8 @@ class PushObjectEnv(utils.EzPickle):
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
+        self.radiuses = [0.025, 0.05, 0.075, 0.1]
+        self.level = 0
         self.rew_scale = 1.
         self.dist_thresh = 0.01
         self.metadata = {
@@ -260,7 +262,9 @@ class PushObjectEnv(utils.EzPickle):
         if rand_init_pos:
             # center around zero, with radius 0.03
             # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.075
+            radiuses = self.radiuses[:self.level]
+            radius = np.random.choice(radiuses)
+            print('level: %d, sampled radius: %f' % (self.level, radius))
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
@@ -273,6 +277,12 @@ class PushObjectEnv(utils.EzPickle):
         self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
+
+
+    def level_up(self):
+        self.level += 1
+        n_levels = len(self.radiuses)
+        self.level = np.minimum(self.level, n_levels - 1)
 
 
     def viewer_setup(self):
