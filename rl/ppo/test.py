@@ -16,19 +16,20 @@ def test(env,
     if gpu:
         pi.cuda()
     pi.train()
-    rollout(pi, env, gpu)
+    for i in range(3):
+        rollout(pi, env, gpu)
 
 
 def rollout(pi, env, gpu):
     ob = env.reset()
     done = False
-    # env.env.start_record_video()
+    env.env.start_record_video()
     while not done:
         _ob = convert_tensor(ob, gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
         ob, _, done, _ = env.step(ac)
         env.render()
-    # env.env.stop_record_video()
+    env.env.stop_record_video()
     env.reset()
 
 
