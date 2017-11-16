@@ -8,7 +8,8 @@ def test(env,
          policy,
          load_path,
          num_hid_layers,
-         hid_size):
+         hid_size,
+         n):
     ob_space = env.observation_space
     ac_space = env.action_space
     pi = policy("pi", ob_space, ac_space, hid_size=hid_size, num_hid_layers=num_hid_layers, gpu=gpu)
@@ -16,7 +17,7 @@ def test(env,
     if gpu:
         pi.cuda()
     pi.train()
-    for i in range(3):
+    for i in range(n):
         rollout(pi, env, gpu)
 
 

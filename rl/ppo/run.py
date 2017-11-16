@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--log', help='log directory', type=str, default='')
     parser.add_argument('--load', help='load path of model', type=str, default='')
     parser.add_argument('--test', action='store_true', help='test mode', default=False)
+    parser.add_argument('--n', help='num rollouts', type=int, default=10)
     args = parser.parse_args()
     pp = pprint.PrettyPrinter(indent=1)
     print(pp.pformat(args))
@@ -30,7 +31,7 @@ def main():
                      log_dir=args.log,
                      seed=args.seed)
     if args.test:
-      test(env, args.gpu, policy=config.policy, load_path=args.load, num_hid_layers=config.num_hid_layers, hid_size=config.hid_size)
+      test(env, args.gpu, policy=config.policy, load_path=args.load, num_hid_layers=config.num_hid_layers, hid_size=config.hid_size, n=args.n)
     else:
       train(env, args.gpu, num_timesteps=config.num_timesteps, seed=args.seed, config=config, log_dir=args.log, load_path=args.load)
 
