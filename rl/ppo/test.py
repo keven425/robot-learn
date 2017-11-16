@@ -28,7 +28,7 @@ def rollout(pi, env, n_steps, gpu):
     for i in range(n_steps):
         _ob = convert_tensor(ob[0], gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
-        ob, _, done, _ = env.step(ac)
+        ob, _, _, done, _ = env.step(ac)
         env.render()
     env.stop_record_video()
 
