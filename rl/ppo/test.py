@@ -21,7 +21,7 @@ def test(env,
 
 
 def rollout(pi, env, gpu):
-    ob = env.reset()
+    ob = env.reset(rand_init_pos=True)
     done = False
     env.start_record_video()
     while not done:
@@ -30,7 +30,6 @@ def rollout(pi, env, gpu):
         ob, _, done, _ = env.step(ac)
         env.render()
     env.stop_record_video()
-    env.reset()
 
 
 def convert_tensor(var, gpu):
