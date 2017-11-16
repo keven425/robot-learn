@@ -9,7 +9,7 @@ from gym.utils import seeding
 import numpy as np
 import mujoco_py
 
-DEFAULT_GOAL_POS = np.array([.075, 0.])
+DEFAULT_GOAL_POS = np.array([.15, 0.15])
 
 
 
@@ -27,9 +27,8 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = DEFAULT_GOAL_POS
+        self.goal_pos = np.array([.075, 0.])
         self.rew_scale = 1.
-        print('setting to 1')
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
