@@ -9,7 +9,7 @@ from gym.utils import seeding
 import numpy as np
 import mujoco_py
 
-DEFAULT_GOAL_POS = np.array([.15, .15])
+DEFAULT_GOAL_POS = np.array([.075, 0.])
 
 
 
@@ -152,7 +152,11 @@ class PushObjectEnv(utils.EzPickle):
         self.t = 0
         self.sim.reset()
         if rand_goal_pos:
-            goal_pos = np.random.uniform(size=(2,)) * 0.3 - .15
+            radius = 0.075
+            angle = np.random.uniform(-math.pi, math.pi)
+            x = np.cos(angle) * radius
+            y = np.sin(angle) * radius
+            goal_pos = np.array([x, y])
         else:
             goal_pos = DEFAULT_GOAL_POS
         ob = self.reset_model(goal_pos)
