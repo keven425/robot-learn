@@ -196,7 +196,7 @@ class PPO(nn.Module):
                 best_rew = mean_rew
             if mean_rew > 20.:
                 print('level accomplished. increase difficulty')
-                self.env.level_up()
+                self.env.env.level_up()
                 lenbuffer = deque(maxlen=100)  # reset buffers for running means
                 rewbuffer = deque(maxlen=100)
             lenbuffer.extend(lens)
