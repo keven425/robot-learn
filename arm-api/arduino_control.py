@@ -72,7 +72,7 @@ def home():
     move(1,30)
     time.sleep(0.03)
     time.sleep(0.5)
-    move(1,70)
+    move(1,120)
     # time.sleep(0.5)
     move(2,70)
     # time.sleep(0.5)

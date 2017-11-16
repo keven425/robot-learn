@@ -1,7 +1,6 @@
 import torch
 from torch.autograd import Variable
-
-
+from arm.control import Arm
 
 def test(env,
          gpu,
@@ -29,6 +28,8 @@ def rollout(pi, env, n_steps, gpu):
         _ob = convert_tensor(ob, gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
         ob, _, done, _ = env.step(ac)
+        arm = Arm()
+        arm.set_positions(ac)
         env.render()
     env.stop_record_video()
 
