@@ -267,12 +267,10 @@ class PushObjectEnv(utils.EzPickle):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
-        print('goal_pos: ' + str(goal_pos))
         self.goal_pos = goal_pos
         dist_sq_default = np.sum(np.square(DEFAULT_GOAL_POS))
         dist_sq_goal = np.sum(np.square(goal_pos))
         self.rew_scale = dist_sq_default / dist_sq_goal
-        print('setting to: ' + str(self.rew_scale))
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
