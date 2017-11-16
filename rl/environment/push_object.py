@@ -303,7 +303,7 @@ class PushObjectEnv(utils.EzPickle):
             y = np.sin(angle) * radius
             obj_pos = np.array([x, y])
         else:
-            obj_pos = [0., 0.]
+            obj_pos = [.05, .05]
         init_qpos[:2] = obj_pos
         dist_sq_default = np.sum(np.square([.15, .15]))
         dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
