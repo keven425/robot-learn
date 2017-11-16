@@ -244,6 +244,7 @@ class PushObjectEnv(utils.EzPickle):
         self.video_process.join()
         self.video_idx += 1
         self.recording = False
+        print('finished recording video %d' % self.video_idx)
 
     # ----------------------------
 
