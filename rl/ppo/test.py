@@ -9,6 +9,7 @@ def test(env,
          load_path,
          num_hid_layers,
          hid_size,
+         n_steps,
          n):
     ob_space = env.observation_space
     ac_space = env.action_space
@@ -18,14 +19,13 @@ def test(env,
         pi.cuda()
     pi.train()
     for i in range(n):
-        rollout(pi, env, gpu)
+        rollout(pi, env, n_steps, gpu)
 
 
-def rollout(pi, env, gpu):
+def rollout(pi, env, n_steps, gpu):
     ob = env.reset(rand_init_pos=True)
-    done = False
     env.start_record_video()
-    while not done:
+    for i in range(n_steps):
         _ob = convert_tensor(ob, gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
         ob, _, done, _ = env.step(ac)
