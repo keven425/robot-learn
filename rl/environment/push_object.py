@@ -184,8 +184,8 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model()
-        hidden_ob = self.get_hidden_ob(rand_init_pos)
+        ob = self.reset_model(rand_init_pos)
+        hidden_ob = self.get_hidden_ob()
         return ob, hidden_ob
 
 
