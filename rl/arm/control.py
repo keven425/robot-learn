@@ -5,6 +5,7 @@ import threading
 import sys
 import os
 import numpy as np
+from arm.denormalizer import Denormalizer
 
 # usbport = '/dev/ttyACM2'
 usbport = '/dev/cu.usbmodem1421'
@@ -21,6 +22,15 @@ BOUNDS = {
     5: [130, 471, 318],
     6: [133, 440, 289],
 }
+
+RANGES = [
+    [7, 180],
+    [46, 169],
+    [122, 94],
+    [6, 172],
+    [0, 170],
+    [1, 155]
+]
 # 0
 # ['144', '222', '375', '143', '130', '133']
 # 90
@@ -71,22 +81,53 @@ class Arm(object):
 
     def move(self, servo, angle):
         if (0 <= angle <= 180):
+            print(bytes([servo]))
+            print(bytes([angle]))
             self.dev.reset_input_buffer()
-            self.dev.write(chr(255))
-            self.dev.write(chr(servo))
-            self.dev.write(chr(angle))
+            self.dev.write(bytes([255]))
+            self.dev.write(bytes([servo]))
+            self.dev.write(bytes([angle]))
         else:
             print("Servo angle must be an integer between 0 and 180.\n")
 
     def set_positions(self, angles):
-        for idx, angle in angles:
-            self.move(idx, angle)
+        denormalizer = Denormalizer(RANGES)
+        denormalized = denormalizer.denormalize(angles)
+        time.sleep(0.01)
+        for idx, angle in enumerate(denormalized):
+            angle = int(angle)
+            print(idx+1, angle)
+            servo = idx + 1
+            self.move(servo, angle)
+
+    def home(self):
+        time.sleep(0.1)
+        self.move(1,30)
+        time.sleep(0.03)
+        self.move(1,120)
+        time.sleep(0.03)
+        self.move(1,30)
+        time.sleep(0.03)
+        time.sleep(0.5)
+        self.move(1,120)
+        # time.sleep(0.5)
+        self.move(2,70)
+        # time.sleep(0.5)
+        self.move(3,70)
+        # time.sleep(0.5)
+        self.move(4,70)
+        # time.sleep(0.5)
+        self.move(5,70)
+        # time.sleep(0.5)
+        self.move(6,70)
+        time.sleep(0.5)
 
 if __name__ == '__main__':
     arm = Arm()
 
-    positions = np.array([ 0.10411902,  0.63553101,  0.16499728,  0.67655069,  0.24985145, -0.05693498])
-    print(positions)
+    positions = np.array([ -0.11467527, -0.16472031, 0.19183921, 0.17777404, 0.16154106, 0.18859741])
+
+    # print(denormalized)
     arm.set_positions(positions)
 
 
