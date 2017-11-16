@@ -42,7 +42,7 @@ class Config():
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
-    self.record_video_freq = 1
+    self.record_video_freq = 100
 
 def wrap_train(env):
   from common.atari_wrappers import (wrap_deepmind, FrameStack)
