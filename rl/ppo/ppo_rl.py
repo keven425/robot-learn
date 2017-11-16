@@ -36,7 +36,8 @@ class PPO(nn.Module):
                  adam_epsilon=1e-5,
                  schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
                  record_video_freq=100,
-                 log_dir=''
+                 log_dir='',
+                 load_path=''
                  ):
         super(PPO, self).__init__()
         self.env = env
