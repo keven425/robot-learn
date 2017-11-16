@@ -23,10 +23,10 @@ def test(env,
 
 
 def rollout(pi, env, n_steps, gpu):
-    ob = env.reset(rand_init_pos=True)
+    ob, _ = env.reset(rand_init_pos=True)
     env.start_record_video()
     for i in range(n_steps):
-        _ob = convert_tensor(ob[0], gpu)
+        _ob = convert_tensor(ob, gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
         ob, _, _, done, _ = env.step(ac)
         env.render()
