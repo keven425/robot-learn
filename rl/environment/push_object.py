@@ -176,7 +176,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self):
+    def reset(self, rand_init_pos):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
