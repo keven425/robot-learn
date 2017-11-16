@@ -28,7 +28,7 @@ class PushObjectEnv(utils.EzPickle):
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
         self.radiuses = [0.025, 0.05, 0.075, 0.1]
-        self.level = 0
+        self.level = 1
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -315,7 +315,7 @@ class PushObjectEnv(utils.EzPickle):
     def level_up(self):
         self.level += 1
         n_levels = len(self.radiuses)
-        self.level = np.minimum(self.level, n_levels - 1)
+        self.level = np.minimum(self.level, n_levels)
 
 
     def viewer_setup(self):
