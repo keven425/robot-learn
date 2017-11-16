@@ -196,6 +196,9 @@ class PPO(nn.Module):
                 torch.save(self.pi.state_dict(), self.save_model_path)
                 print('saved model to: ' + self.save_model_path)
                 best_rew = mean_rew
+            if mean_rew > 20.:
+                # level accomplished. increase difficulty
+                self.env.level_up()
             lenbuffer.extend(lens)
             rewbuffer.extend(rews)
             logger.record_tabular("EpLenMean", np.mean(lenbuffer))
