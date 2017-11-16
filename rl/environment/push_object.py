@@ -296,6 +296,7 @@ class PushObjectEnv(utils.EzPickle):
         self.level += 1
         n_levels = len(self.radiuses)
         self.level = np.minimum(self.level, n_levels)
+        print('increasing level to: %d' % self.level)
 
 
     def viewer_setup(self):
