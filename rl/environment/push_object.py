@@ -126,6 +126,7 @@ class PushObjectEnv(utils.EzPickle):
 
         # distance between object and goal
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
+        print('dist_sq: ' + str(dist_sq))
         rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dist_sq)
 
         # distance between object and robot end-effector
@@ -267,6 +268,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
+        print('goal_pos: ' + str(goal_pos))
         self.goal_pos = goal_pos
         dist_sq_default = np.sum(np.square(DEFAULT_GOAL_POS))
         dist_sq_goal = np.sum(np.square(goal_pos))
