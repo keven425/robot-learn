@@ -264,7 +264,6 @@ class PushObjectEnv(utils.EzPickle):
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
-            y = np.minimum(y, 0.) # force to be below half
             obj_pos = np.array([x, y])
         else:
             obj_pos = [0., 0.]
