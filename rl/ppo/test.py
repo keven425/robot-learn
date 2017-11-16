@@ -23,13 +23,13 @@ def test(env,
 def rollout(pi, env, gpu):
     ob = env.reset()
     done = False
-    env.env.start_record_video()
+    env.start_record_video()
     while not done:
         _ob = convert_tensor(ob, gpu)
         ac, vpred = pi.act(_ob, stochastic=False)
         ob, _, done, _ = env.step(ac)
         env.render()
-    env.env.stop_record_video()
+    env.stop_record_video()
     env.reset()
 
 
