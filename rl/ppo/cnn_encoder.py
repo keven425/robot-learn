@@ -35,7 +35,8 @@ class CnnEncoder(nn.Module):
 
         # compute resulting image size
         size = self.get_size_out(image_h, image_w, n_layers)
-        self.fc_out = nn.Linear(size, n_out)
+        self.fc = nn.Linear(size, 32)
+        self.fc_out = nn.Linear(32, n_out)
         self.relu = nn.ReLU(inplace=True)
 
         # configure weights
@@ -43,6 +44,7 @@ class CnnEncoder(nn.Module):
             init_weights_conv(conv)
         for conv in self.conv_reses:
             init_weights_conv(conv)
+        init_weights_fc(self.fc, 0.01)
         init_weights_fc(self.fc_out, 0.01)
 
 
@@ -53,30 +55,11 @@ class CnnEncoder(nn.Module):
             _conv_res = self.relu(conv_res(x))
             x = _conv + _conv_res
 
-        # spatial softmax
-        _softmax = softmax2d_p(x)
-        w = x.size(3)
-        h = x.size(2)
-        xs = Variable(torch.FloatTensor(np.arange(-1., 1., 2. / w)), requires_grad=False)
-        ys = Variable(torch.FloatTensor(np.arange(-1., 1., 2. / h)).view(-1, 1), requires_grad=False)
-        if self.gpu:
-            xs = xs.cuda()
-            ys = ys.cuda()
-        x_avg = torch.mul(_softmax, xs)
-        x_avg = torch.sum(x_avg, dim=-1)
-        x_avg = torch.sum(x_avg, dim=-1)
-        y_avg = torch.mul(_softmax, ys)
-        y_avg = torch.sum(y_avg, dim=-1)
-        y_avg = torch.sum(y_avg, dim=-1)
-        logits = torch.cat([
-            x_avg,
-            y_avg
-        ], dim=-1)
-
         # compute output
         x = x.view(x.size(0), -1)  # flatten
-        pred = self.fc_out(x)
-        return pred, logits
+        hid = self.fc(x)
+        pred = self.fc_out(hid)
+        return pred, hid
 
 
     def act(self, image):
