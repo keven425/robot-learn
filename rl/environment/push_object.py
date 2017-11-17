@@ -2,6 +2,7 @@ import cv2
 import os
 import imageio
 import atexit
+import math
 from multiprocessing import Process, Queue
 from gym.spaces import Box
 from gym import utils
@@ -25,7 +26,8 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([.15, .15])
+        self.goal_pos = np.array([0., 0.])
+        self.rew_scale = 1.
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -129,7 +131,7 @@ class PushObjectEnv(utils.EzPickle):
         ob = self._get_obs(sample_image)
 
         dsq_obj_goal = self.get_dsq_obj_goal()
-        rew_obj_goal = 0.1 * np.exp(-100. * dsq_obj_goal)
+        rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dsq_obj_goal)
 
         # distance between object and robot end-effector
         dsq_endeff_obj = self.get_dsq_endeff_obj()
@@ -174,7 +176,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self):
+    def reset(self, rand_init_pos):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -182,7 +184,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model()
+        ob = self.reset_model(rand_init_pos)
         hidden_ob = self.get_hidden_ob()
         if self.viewer is not None:
             self.viewer_setup()
@@ -289,10 +291,25 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self):
+    def reset_model(self, rand_init_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
+        init_qpos = self.init_qpos
+        if rand_init_pos:
+            # center around zero, with radius 0.03
+            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
+            radius = 0.075
+            angle = np.random.uniform(-math.pi, math.pi)
+            x = np.cos(angle) * radius
+            y = np.sin(angle) * radius
+            obj_pos = np.array([x, y])
+        else:
+            obj_pos = [.05, .05]
+        init_qpos[:2] = obj_pos
+        dist_sq_default = np.sum(np.square([.15, .15]))
+        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
+        self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
@@ -424,7 +441,7 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def save_image_sampled(self, image):
-        if self.image_idx % 1000 != 0:
+        if self.image_idx % 100000 != 0:
             self.image_idx += 1
             return
         path = self.image_path % self.image_idx
