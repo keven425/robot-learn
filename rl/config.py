@@ -38,11 +38,11 @@ class Config():
     self.entcoeff = 0.001
     self.optim_epochs = 10
     self.optim_stepsize = 4e-4
-    self.optim_batchsize = 470
+    self.optim_batchsize = 400
     self.gamma = 0.99
     self.lam = 0.95
     self.schedule = 'linear'
-    self.record_video_freq = 100
+    self.record_video_freq = 1
     self.image_h = 128
     self.image_w = 128
 

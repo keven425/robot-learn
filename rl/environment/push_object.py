@@ -109,7 +109,7 @@ class PushObjectEnv(utils.EzPickle):
         return [seed]
 
 
-    def step(self, action):
+    def step(self, action, sample_image=False):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's state.
@@ -126,7 +126,7 @@ class PushObjectEnv(utils.EzPickle):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         self.do_simulation(action)
-        ob = self._get_obs()
+        ob = self._get_obs(sample_image)
 
         dsq_obj_goal = self.get_dsq_obj_goal()
         rew_obj_goal = 0.1 * np.exp(-100. * dsq_obj_goal)
@@ -303,17 +303,18 @@ class PushObjectEnv(utils.EzPickle):
         Optionally implement this method, if you need to tinker with camera position
         and so forth.
         """
-        # self.viewer.cam.trackbodyid = 0  # id of the body to track
-        self.viewer.cam.distance = self.model.stat.extent * 1.0  # how much you "zoom in", model.stat.extent is the max limits of the arena
-        self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
-        self.viewer.cam.lookat[1] += 0.
-        self.viewer.cam.lookat[2] += 0.
+        idx = self.model.body_name2id('world')
+        self.viewer.cam.trackbodyid = idx  # id of the body to track
+        self.viewer.cam.distance = self.model.stat.extent * 0.8  # how much you "zoom in", model.stat.extent is the max limits of the arena
+        self.viewer.cam.lookat[0] = 0.  # x,y,z offset from the object
+        self.viewer.cam.lookat[1] = 0.
+        self.viewer.cam.lookat[2] = 0.
         self.viewer.cam.elevation = -90  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
         self.viewer.cam.azimuth = 0
 
 
     def viewer_setup_video(self):
-        self.viewer.cam.distance = self.model.stat.extent * 1.0  # how much you "zoom in", model.stat.extent is the max limits of the arena
+        self.viewer.cam.distance = self.model.stat.extent * 1.2  # how much you "zoom in", model.stat.extent is the max limits of the arena
         # self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
         # self.viewer.cam.lookat[1] += 0.
         # self.viewer.cam.lookat[2] += 0.
@@ -400,7 +401,7 @@ class PushObjectEnv(utils.EzPickle):
         return self.data.body_xquat[idx]
 
 
-    def _get_obs(self):
+    def _get_obs(self, sample_image=False):
         actuator_pos = self.data.actuator_length[self.pos_actuator_ids]
         actuator_vel = self.data.actuator_velocity[self.vel_actuator_ids]
         # normalize pos
@@ -409,7 +410,7 @@ class PushObjectEnv(utils.EzPickle):
         # cube_pose = self.get_body_xmat(self.obj_name).reshape(-1)
         image = self.viewer._read_pixels_as_in_window()
         image = cv2.resize(image, (self.image_w, self.image_h)) # scale image
-        self.save_image_sampled(image)
+        if sample_image: self.save_image_sampled(image)
         joints = np.concatenate([
             # cube_com,
             # cube_pose,
@@ -421,7 +422,7 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def save_image_sampled(self, image):
-        if self.image_idx % 100000 != 0:
+        if self.image_idx % 1000 != 0:
             self.image_idx += 1
             return
         path = self.image_path % self.image_idx

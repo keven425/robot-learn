@@ -281,7 +281,7 @@ class PPO(nn.Module):
             acs[i] = ac
             prevacs[i] = prevac
 
-            (image, joint), hid_ob, rew, new, _ = env.step(ac)
+            (image, joint), hid_ob, rew, new, _ = env.step(ac, sample_image=True)
             # env.render()
             rews[i] = rew
 
