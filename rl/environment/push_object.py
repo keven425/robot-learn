@@ -305,7 +305,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         idx = self.model.body_name2id('world')
         self.viewer.cam.trackbodyid = idx  # id of the body to track
-        self.viewer.cam.distance = self.model.stat.extent * 0.8  # how much you "zoom in", model.stat.extent is the max limits of the arena
+        self.viewer.cam.distance = self.model.stat.extent  # how much you "zoom in", model.stat.extent is the max limits of the arena
         self.viewer.cam.lookat[0] = 0.  # x,y,z offset from the object
         self.viewer.cam.lookat[1] = 0.
         self.viewer.cam.lookat[2] = 0.
@@ -314,6 +314,8 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def viewer_setup_video(self):
+        idx = self.model.body_name2id('world')
+        self.viewer.cam.trackbodyid = idx
         self.viewer.cam.distance = self.model.stat.extent * 1.2  # how much you "zoom in", model.stat.extent is the max limits of the arena
         # self.viewer.cam.lookat[0] += 0.  # x,y,z offset from the object
         # self.viewer.cam.lookat[1] += 0.
