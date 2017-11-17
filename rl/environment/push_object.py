@@ -25,7 +25,6 @@ class PushObjectEnv(utils.EzPickle):
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
-        self.rew_scale = 1.
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -123,7 +122,7 @@ class PushObjectEnv(utils.EzPickle):
 
         # distance between object and goal
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dist_sq)
+        rew_obj_goal = 0.1 * np.exp(-800. * dist_sq)
 
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
@@ -259,18 +258,10 @@ class PushObjectEnv(utils.EzPickle):
         init_qpos = self.init_qpos
         if rand_init_pos:
             # center around zero, with radius 0.03
-            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.075
-            angle = np.random.uniform(-math.pi, math.pi)
-            x = np.cos(angle) * radius
-            y = np.sin(angle) * radius
-            obj_pos = np.array([x, y])
+            obj_pos = np.random.uniform(size=[2,]) * 0.1 - 0.05
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
-        dist_sq_default = np.sum(np.square([.15, .15]))
-        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
-        self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
