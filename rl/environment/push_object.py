@@ -25,7 +25,7 @@ class PushObjectEnv(utils.EzPickle):
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
-        self.radiuses = [0.025, 0.05, 0.075, 0.1]
+        self.radiuses = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.075]
         self.level = 1
         self.dist_thresh = 0.01
         self.metadata = {
@@ -139,6 +139,14 @@ class PushObjectEnv(utils.EzPickle):
             done = True
         self.t += 1
         return ob, reward, done, dict()
+
+
+    def get_dist_goal(self):
+        # distance between object and goal
+        obj_pos = self.get_body_com(self.obj_name)
+        obj_pos_xy = obj_pos[:2]
+        dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
+        return np.sqrt(dist_sq)
 
 
     def reset(self, rand_init_pos=False):
