@@ -16,8 +16,8 @@ class CnnEncoder(nn.Module):
         self.final_n_c = 16
 
         n_c_out = 32
-        conv1 = nn.Conv2d(n_channel, n_c_out, 5, 2, 2)
-        conv_res1 = nn.Conv2d(n_channel, n_c_out, 1, 2, 0)
+        conv1 = nn.Conv2d(n_channel, n_c_out, 5, 1, 2)
+        conv_res1 = nn.Conv2d(n_channel, n_c_out, 1, 1, 0)
         self.convs = [conv1]
         self.conv_reses = [conv_res1]
         for i in range(n_layers - 2):
@@ -52,7 +52,6 @@ class CnnEncoder(nn.Module):
             _conv = self.relu(conv(x))
             _conv_res = self.relu(conv_res(x))
             x = _conv + _conv_res
-            # x = self.pool(x)
 
         # spatial softmax
         _softmax = softmax2d_p(x)
@@ -87,8 +86,8 @@ class CnnEncoder(nn.Module):
 
 
     def get_size_out(self, image_h, image_w, n_layers):
-        size_h = image_h // 2
-        size_w = image_w // 2
+        size_h = image_h
+        size_w = image_w
         # for i in range(n_layers):
         #     size_h //= 2
         #     size_w //= 2
