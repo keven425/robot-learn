@@ -128,7 +128,6 @@ class PPO(nn.Module):
         best_rew = 0.
         lenbuffer = deque(maxlen=100) # rolling buffer for episode lengths
         rewbuffer = deque(maxlen=100) # rolling buffer for episode rewards
-        distbuffer = deque(maxlen=100)
         self.check_time_constraints()
 
         while True:
@@ -190,24 +189,20 @@ class PPO(nn.Module):
             logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
             lrlocal = (segment["ep_lens"], segment["ep_rets"]) # local values
             lens, rews = map(flatten_lists, zip(*[lrlocal]))
-            dists = segment["ep_dists"]
             mean_rew = np.mean(rews)
-            mean_dists = np.mean(dists)
             if mean_rew > best_rew:
                 torch.save(self.pi.state_dict(), self.save_model_path)
                 print('saved model to: ' + self.save_model_path)
                 best_rew = mean_rew
-            if mean_dists < .01:
+            if mean_rew > 20.:
                 print('level accomplished. increase difficulty')
                 self.env.env.level_up()
                 lenbuffer = deque(maxlen=100)  # reset buffers for running means
                 rewbuffer = deque(maxlen=100)
             lenbuffer.extend(lens)
             rewbuffer.extend(rews)
-            distbuffer.extend(dists)
             logger.record_tabular("EpLenMean", np.mean(lenbuffer))
             logger.record_tabular("EpRewMean", np.mean(rewbuffer))
-            logger.record_tabular("EpDistMean", np.mean(distbuffer))
             logger.record_tabular("RewThisIter", mean_rew)
             logger.record_tabular("EpThisIter", len(lens))
             episodes_so_far += len(lens)
@@ -250,7 +245,6 @@ class PPO(nn.Module):
         cur_ep_len = 0  # len of current episode
         ep_rets = []  # returns of completed episodes in this segment
         ep_lens = []  # lengths of ...
-        ep_dists = [] # distance to goal
 
         # Initialize history arrays
         obs = np.array([ob for _ in range(horizon)])
@@ -271,12 +265,11 @@ class PPO(nn.Module):
             if t > 0 and t % horizon == 0:
                 yield {"ob": obs, "rew": rews, "vpred": vpreds, "new": news,
                        "ac": acs, "prevac": prevacs, "nextvpred": vpred * (1 - new),
-                       "ep_rets": ep_rets, "ep_lens": ep_lens, "ep_dists": ep_dists}
+                       "ep_rets": ep_rets, "ep_lens": ep_lens}
                 # Be careful!!! if you change the downstream algorithm to aggregate
                 # several of these batches, then be sure to do a deepcopy
                 ep_rets = []
                 ep_lens = []
-                ep_dists = []
             i = t % horizon
             obs[i] = ob
             vpreds[i] = vpred
@@ -291,10 +284,8 @@ class PPO(nn.Module):
             cur_ep_ret += rew
             cur_ep_len += 1
             if new:
-                dist = env.env.get_dist_goal()
                 ep_rets.append(cur_ep_ret)
                 ep_lens.append(cur_ep_len)
-                ep_dists.append(dist)
                 cur_ep_ret = 0
                 cur_ep_len = 0
                 ob = env.reset(rand_init_pos=True)
