@@ -317,7 +317,7 @@ class PushObjectEnv(utils.EzPickle):
         idx = self.model.body_name2id('world')
         self.viewer.cam.trackbodyid = idx
         self.viewer.cam.distance = self.model.stat.extent * 1.8  # how much you "zoom in", model.stat.extent is the max limits of the arena
-        self.viewer.cam.lookat[0] = 0.  # x,y,z offset from the object
+        self.viewer.cam.lookat[0] = -0.1  # x,y,z offset from the object
         self.viewer.cam.lookat[1] = 0.2
         self.viewer.cam.lookat[2] = 0.
         self.viewer.cam.elevation = -45.  # camera rotation around the axis in the plane going through the frame origin (if 0 you just see a line)
