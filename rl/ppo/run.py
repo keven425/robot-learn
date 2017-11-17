@@ -39,6 +39,7 @@ def main():
 
 def train(env, gpu, num_timesteps, seed, config, log_dir, load_path):
     from ppo.ppo_rl import PPO
+    from ppo.conv_sl import ConvPretrain
     set_global_seeds(seed, gpu)
     env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), "monitor.json"), allow_early_resets=True)
     env.seed(seed)
@@ -46,27 +47,42 @@ def train(env, gpu, num_timesteps, seed, config, log_dir, load_path):
     if hasattr(config, 'wrap_env_fn'):
         env = config.wrap_env_fn(env)
         env.seed(seed)
-    ppo_rl = PPO(env,
+
+    # pretraining of vision layers
+    conv_sl = ConvPretrain(env,
                  gpu=gpu,
                  policy=config.policy,
-                 prob_dist=config.prob_dist,
                  num_hid_layers=config.num_hid_layers,
                  hid_size=config.hid_size,
-                 timesteps_per_batch=config.timesteps_per_batch,
-                 clip_param=config.clip_param,
-                 beta=config.beta,
-                 entcoeff=config.entcoeff,
                  optim_epochs=config.optim_epochs,
                  optim_stepsize=config.optim_stepsize,
                  optim_batchsize=config.optim_batchsize,
-                 gamma=config.gamma,
-                 lam=config.lam,
-                 max_timesteps=num_timesteps,
-                 schedule=config.schedule,
-                 record_video_freq=config.record_video_freq,
-                 log_dir=log_dir,
-                 load_path=load_path)
-    ppo_rl.run()
+                 adam_epsilon=1e-5,
+                 schedule='constant',  # annealing for stepsize parameters (epsilon and adam)
+                 log_dir='',
+                 load_path='')
+    conv_sl.run()
+    # ppo_rl = PPO(env,
+    #              gpu=gpu,
+    #              policy=config.policy,
+    #              prob_dist=config.prob_dist,
+    #              num_hid_layers=config.num_hid_layers,
+    #              hid_size=config.hid_size,
+    #              timesteps_per_batch=config.timesteps_per_batch,
+    #              clip_param=config.clip_param,
+    #              beta=config.beta,
+    #              entcoeff=config.entcoeff,
+    #              optim_epochs=config.optim_epochs,
+    #              optim_stepsize=config.optim_stepsize,
+    #              optim_batchsize=config.optim_batchsize,
+    #              gamma=config.gamma,
+    #              lam=config.lam,
+    #              max_timesteps=num_timesteps,
+    #              schedule=config.schedule,
+    #              record_video_freq=config.record_video_freq,
+    #              log_dir=log_dir,
+    #              load_path=load_path)
+    # ppo_rl.run()
     env.close()
 
 

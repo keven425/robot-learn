@@ -153,10 +153,9 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_hidden_ob(self):
         cube_com = self.get_body_com(self.obj_name)[:2]
-        endeff_com = self.get_body_com(self.endeff_name)[:2]
+        # endeff_com = self.get_body_com(self.endeff_name)[:2]
         return np.concatenate([
-            cube_com,
-            endeff_com
+            cube_com
         ])
 
 
@@ -297,19 +296,19 @@ class PushObjectEnv(utils.EzPickle):
         init_qpos = self.init_qpos
         if rand_init_pos:
             # center around zero, with radius 0.03
-            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radiuses = self.radiuses[:self.level]
-            radius = np.random.choice(radiuses)
-            print('level: %d, sampled radius: %f' % (self.level, radius))
-            angle = np.random.uniform(-math.pi, math.pi)
-            x = np.cos(angle) * radius
-            y = np.sin(angle) * radius
-            obj_pos = np.array([x, y])
+            obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
+            # radiuses = self.radiuses[:self.level]
+            # radius = np.random.choice(radiuses)
+            # print('level: %d, sampled radius: %f' % (self.level, radius))
+            # angle = np.random.uniform(-math.pi, math.pi)
+            # x = np.cos(angle) * radius
+            # y = np.sin(angle) * radius
+            # obj_pos = np.array([x, y])
         else:
             obj_pos = [.05, .05]
         init_qpos[:2] = obj_pos
         self.set_state(self.init_qpos, self.init_qvel)
-        return self._get_obs()
+        return self._get_obs(sample_image=True)
 
 
     def level_up(self):
