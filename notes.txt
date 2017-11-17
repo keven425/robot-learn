@@ -16,15 +16,16 @@ this week:
 
 
 Ideas:
+ * make critic learn faster
  * incorporate sin(), cos() of orientations
  * cv: input diff b/t goal & current image
  * vary: fix position in a given batch
- * cv: predict endeffector position
  * pingpong: vel_force_ctrl use frameskip 1.
  * forward kinematics to limit endeffector positions within bounding box
 
 
 Lessons:
+ * don't change reward function when changing radius.
  * fast critic learning is helpful
  * normalization of inputs / batchnorm didn't work
  * fixed_kl works great
