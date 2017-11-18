@@ -140,7 +140,30 @@ class PushObjectEnv(utils.EzPickle):
         return ob, reward, done, dict()
 
 
-    def reset(self, rand_init_pos=False):
+    def get_hidden_ob(self):
+        cube_com = self.get_body_com(self.obj_name)[:2]
+        # endeff_com = self.get_body_com(self.endeff_name)[:2]
+        return np.concatenate([
+            cube_com
+        ])
+
+
+    def get_dsq_obj_goal(self):
+        obj_pos = self.get_body_com(self.obj_name)
+        obj_pos_xy = obj_pos[:2]
+        # distance between object and goal
+        dsq_obj_goal = np.sum(np.square(obj_pos_xy - self.goal_pos))
+        return dsq_obj_goal
+
+
+    def get_dsq_endeff_obj(self):
+        obj_pos = self.get_body_com(self.obj_name)
+        endeff_pos = self.get_body_com(self.endeff_name)
+        dsq_endeff_obj = np.sum(np.square(endeff_pos - obj_pos))
+        return dsq_endeff_obj
+
+
+    def reset(self, rand_obj_pos, rand_arm_pos):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -148,7 +171,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model(rand_init_pos)
+        ob = self.reset_model(rand_init_pos, rand_arm_pos)
         return ob
 
 
@@ -252,12 +275,12 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self, rand_init_pos):
+    def reset_model(self, rand_obj_pos, rand_arm_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
         init_qpos = self.init_qpos
-        if rand_init_pos:
+        if rand_obj_pos:
             # center around zero, with radius 0.03
             # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
             radius = 0.075
@@ -268,10 +291,28 @@ class PushObjectEnv(utils.EzPickle):
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
-        dist_sq_default = np.sum(np.square([.15, .15]))
-        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
-        self.rew_scale = dist_sq_default / dist_sq_goal
-        self.set_state(self.init_qpos, self.init_qvel)
+        self.set_state(init_qpos, self.init_qvel)
+
+        if rand_arm_pos:
+            valid = False
+            while not valid:
+                bigarm_pos = [np.random.uniform(-.3, .3)]
+                arm_pos = np.random.uniform(-1., 1., size=[5,])
+                arm_pos = np.concatenate([bigarm_pos, arm_pos])
+                # arm_pos = np.array([0., 0.5, 0., 0., 1., 0.])
+                arm_pos = self.denormalize_pos(arm_pos)
+                init_qpos[-6:] = arm_pos
+                self.set_state(init_qpos, self.init_qvel)
+                contacting = self.data.ncon > 4
+                endeff_pos = self.get_body_com(self.endeff_name)
+                endeff_above_plane = (endeff_pos[2] > 0)
+                valid = not contacting and endeff_above_plane  # default num contact of cube & plane, in the beginning
+
+            # arm_pos = np.array([0.3, 0.5, 0., 0., 1., 0.])
+            # arm_pos = self.denormalize_pos(arm_pos)
+            # init_qpos[-6:] = arm_pos
+            # self.set_state(init_qpos, self.init_qvel)
+
         return self._get_obs()
 
 
@@ -399,7 +440,10 @@ def save_video(queue, filename, fps):
 
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
-    env.reset()
+    for i in range(9999999):
+        env.reset(rand_obj_pos=True, rand_arm_pos=True)
+        env.render()
+
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
     for j in range(3):
@@ -412,11 +456,11 @@ if __name__ == '__main__':
         #         env.reset()
         # env.stop_record_video()
         for i in range(1500):
-            env.step([0., 0., 0., 0., 0., 0.])
+            # env.step([0., 0., 0., 0., 0., 0.])
             env.render()
         for i in range(1500):
             # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 0., 1., 0., 0., 0.])
+            # env.step([0., 0., 1., 0., 0., 0.])
             env.render()
         # for i in range(1500):
         #     env.step([-1., -1., -1., -1., -1., -1.])
