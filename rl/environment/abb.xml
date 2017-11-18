@@ -41,6 +41,14 @@
             </body>
         </body>
     </worldbody>
+
+    <tendon>
+        <spatial limited="true" range="0 0.6" width="0.005">
+            <site site="end1"/>
+            <site site="end2"/>
+        </spatial>
+    </tendon>
+
     <actuator>
         <!--need to define ctrllimited='false' for <position>, because velocity config will override polisition config-->
         <velocity name="shoulder_velocity" joint="shoulder_joint" ctrllimited="false"/>
