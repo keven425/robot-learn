@@ -44,7 +44,7 @@ int minPulse = 600;   // minimum servo position, us (microseconds)
 int maxPulse = 2400;  // maximum servo position, us
 
 // User input for servo and position
-int userInput[3];    // raw input from serial buffer, 3 bytes
+int userInput[6];    // raw input from serial buffer, 3 bytes
 int startbyte;       // start byte, begin reading input
 int servo;           // which servo to pulse?
 int pos;             // servo angle 0-180
@@ -89,18 +89,23 @@ void setup()
     //   servo5.attach(YOUR_PIN, minPulse, maxPulse);
     //   etc...
 
-    calibrate(servo1, feedbackPin1, 20, 160);  // calibrate for the 20-160 degree range
-//    calibrate(servo2, feedbackPin2, 20, 160);
-//    calibrate(servo3, feedbackPin3, 20, 160);
-//    calibrate(servo4, feedbackPin4, 20, 160);
-//    calibrate(servo5, feedbackPin5, 20, 160);
-//    calibrate(servo6, feedbackPin6, 20, 160);
+//    calibrate(servo1, feedbackPin1, 20, 160);  // calibrate for the 20-160 degree range
 
     // LED on Pin 13 for digital on/off demo
     pinMode(ledPin, OUTPUT);
 
     // Open the serial connection, 9600 baud
     Serial.begin(9600);
+
+    while (!Serial.available());
+
+    startbyte = -1;
+    while (Serial.available() > 0 && startbyte != 254) {
+      startbyte = Serial.read();
+//      Serial.print("startbyte: ");
+//      Serial.println(startbyte);
+    }
+    Serial.print("got 254. serial ready.");
 }
 
 /*
@@ -124,7 +129,6 @@ void calibrate(Servo servo, int analogPin, int minPos, int maxPos)
 
 void feedback ()
 {
-//    String str;
     val1 = analogRead(feedbackPin1);            // reads the value of the potentiometer (value between 0 and 1023)
     val2 = analogRead(feedbackPin2);
     val3 = analogRead(feedbackPin3);
@@ -137,77 +141,51 @@ void feedback ()
     char str[1000];
     sprintf(str, "%d,%d,%d,%d,%d,%d\n", val1, val2, val3, val4, val5, val6);
     Serial.println(str);
-//    str = String(val1) + String(" ") + String(val2)  + String(" ") + String(val3)  + String(" ") + String(val4)  + String(" ") + String(val5)  + String(" ") + String(val6);
-//    if (sizeof(val1) > 0 && sizeof(val2) > 0  && sizeof(val3) > 0 && sizeof(val4) > 0  && sizeof(val5) > 0 && sizeof(val6) > 0  ) {
-//        Serial.println(str);
-//    }
-
 }
 
 void loop()
 {
-    // Wait for serial input (min 3 bytes in buffer)
-    if (Serial.available() > 2) {
+//    while (!Serial.available());
+//    while (Serial.available() > 0 && startbyte != 255) {
+//      startbyte = Serial.read();
+//    }
+    if (Serial.available() > 6) {
         // Read the first byte
         startbyte = Serial.read();
-        // If it's really the startbyte (255) ...
-        if (startbyte == 255) {
-            // ... then get the next two bytes
-            for (i=0;i<2;i++) {
-                userInput[i] = Serial.read();
-            }
-            // First byte = servo to move?
-            servo = userInput[0];
-            // Second byte = which position?
-            pos = userInput[1];
-            // Packet error checking and recovery
-            if (pos == 255) { servo = 255; }
-//            Serial.println(pos);
-//            Serial.print("servo: ");
-//            Serial.print(servo);
-//            Serial.print(", pos: ");
-//
-            // Assign new position to appropriate servo
-            switch (servo) {
-                case 1:
-                    servo1.write(pos);    // move servo1 to 'pos'
-                    break;
-                case 2:
-                    servo2.write(pos);
-                    break;
-                case 3:
-                    servo3.write(pos);
-                    break;
-                case 4:
-                    servo4.write(pos);
-                    break;
-                case 5:
-                    servo5.write(pos);
-                    break;
-                case 6:
-                    servo6.write(pos);
-                    break;
-
-     // TO ADD SERVOS:
-     //     case 5:
-     //       servo5.write(pos);
-     //       break;
-     // etc...
-
-                // LED on Pin 13 for digital on/off demo
-                case 99:
-                    if (pos == 180) {
-                        if (pinState == LOW) { pinState = HIGH; }
-                        else { pinState = LOW; }
-                    }
-                    if (pos == 0) {
-                        pinState = LOW;
-                    }
-                    digitalWrite(ledPin, pinState);
-                    break;
-            }
+        if (startbyte != 255) {
+          exit(1); // not good
+          return;
+        }
+        // ... then get the next two bytes
+        for (i=0;i<6;i++) {
+            userInput[i] = Serial.read();
+        }
+        servo1.write(userInput[0]);
+        servo2.write(userInput[1]);
+        servo3.write(userInput[2]);
+        servo4.write(userInput[3]);
+        servo5.write(userInput[4]);
+        servo6.write(userInput[5]);
+        while (true) {
+          Serial.println("200,200,200,200,200,200");
         }
     }
-    feedback();
-}
 
+//            while (true) {
+//                feedback();
+//            }
+
+//            for (i = 0; i < 6; i++) {
+//              Serial.print("servo");
+//              Serial.print(i);
+//              Serial.print(": ");
+//              Serial.print(userInput[i]);
+//              Serial.print("\n\n");
+//            }
+//            userInput[0];
+          // Packet error checking and recovery
+//            if (pos == 255 || servo == 255 || !pos || !servo) { return; }
+//    }
+//    Serial.println("end of loop");
+//    feedback();
+}
