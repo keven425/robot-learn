@@ -1,5 +1,5 @@
 import time
-from rl.environment.push_object import PushObjectEnv
+from environment.push_object import PushObjectEnv
 from arm.control import Arm
 
 
