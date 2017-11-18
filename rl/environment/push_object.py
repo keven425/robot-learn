@@ -174,7 +174,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self, rand_init_pos):
+    def reset(self, rand_obj_pos, rand_arm_pos):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -182,7 +182,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model(rand_init_pos)
+        ob = self.reset_model(rand_obj_pos, rand_arm_pos)
         hidden_ob = self.get_hidden_ob()
         if self.viewer is not None:
             self.viewer_setup()
@@ -289,12 +289,12 @@ class PushObjectEnv(utils.EzPickle):
     def spec(self):
         return None
 
-    def reset_model(self, rand_init_pos):
+    def reset_model(self, rand_obj_pos, rand_arm_pos):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
         init_qpos = self.init_qpos
-        if rand_init_pos:
+        if rand_obj_pos:
             # center around zero, with radius 0.03
             obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
             # radiuses = self.radiuses[:self.level]
@@ -307,7 +307,28 @@ class PushObjectEnv(utils.EzPickle):
         else:
             obj_pos = [.05, .05]
         init_qpos[:2] = obj_pos
-        self.set_state(self.init_qpos, self.init_qvel)
+        self.set_state(init_qpos, self.init_qvel)
+
+        if rand_arm_pos:
+            valid = False
+            while not valid:
+                bigarm_pos = [np.random.uniform(-.3, .3)]
+                arm_pos = np.random.uniform(-1., 1., size=[5,])
+                arm_pos = np.concatenate([bigarm_pos, arm_pos])
+                # arm_pos = np.array([0., 0.5, 0., 0., 1., 0.])
+                arm_pos = self.denormalize_pos(arm_pos)
+                init_qpos[-6:] = arm_pos
+                self.set_state(init_qpos, self.init_qvel)
+                contacting = self.data.ncon > 4
+                endeff_pos = self.get_body_com(self.endeff_name)
+                endeff_above_plane = (endeff_pos[2] > 0)
+                valid = not contacting and endeff_above_plane  # default num contact of cube & plane, in the beginning
+
+            # arm_pos = np.array([0.3, 0.5, 0., 0., 1., 0.])
+            # arm_pos = self.denormalize_pos(arm_pos)
+            # init_qpos[-6:] = arm_pos
+            # self.set_state(init_qpos, self.init_qvel)
+
         return self._get_obs(sample_image=True)
 
 
@@ -468,7 +489,10 @@ def save_video(queue, filename, fps):
 
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
-    env.reset()
+    for i in range(9999999):
+        env.reset(rand_obj_pos=True, rand_arm_pos=True)
+        env.render()
+
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
     for j in range(3):
@@ -481,11 +505,11 @@ if __name__ == '__main__':
         #         env.reset()
         # env.stop_record_video()
         for i in range(1500):
-            env.step([0., 0., 0., 0., 0., 0.])
+            # env.step([0., 0., 0., 0., 0., 0.])
             env.render()
         for i in range(1500):
             # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 0., 1., 0., 0., 0.])
+            # env.step([0., 0., 1., 0., 0., 0.])
             env.render()
         # for i in range(1500):
         #     env.step([-1., -1., -1., -1., -1., -1.])

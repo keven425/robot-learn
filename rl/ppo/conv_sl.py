@@ -110,13 +110,13 @@ class ConvPretrain(nn.Module):
 
 
     def collect_data(self, env, batch_size):
-        (image, joint), hid_ob = env.reset(rand_init_pos=True)
+        (image, joint), hid_ob = env.reset(rand_obj_pos=True, rand_arm_pos=True)
         _image = rearrange_image(image)
         images = np.array([_image for _ in range(batch_size)])
         labels = np.array([hid_ob for _ in range(batch_size)])
 
         for i in range(batch_size):
-          ob, hid_ob = env.reset(rand_init_pos=True)
+          ob, hid_ob = env.reset(rand_obj_pos=True, rand_arm_pos=True)
           image, _ = ob
           image = rearrange_image(image)
           label = hid_ob
