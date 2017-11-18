@@ -77,7 +77,7 @@ class PPO(nn.Module):
             self.pi.load_state_dict(torch.load(load_path))
             self.oldpi.load_state_dict(torch.load(load_path))
         # only gradient descent on new policy
-        self.optimizer = AdamVariableLr(self.pi.parameters(), lr=self.optim_stepsize, eps=self.adam_epsilon)
+        self.optimizer = AdamVariableLr(self.pi.mlp_policy.parameters(), lr=self.optim_stepsize, eps=self.adam_epsilon)
         self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "hid_loss", "kl", "ent"]
 
 
