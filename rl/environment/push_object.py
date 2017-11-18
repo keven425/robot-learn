@@ -171,7 +171,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model(rand_init_pos, rand_arm_pos)
+        ob = self.reset_model(rand_obj_pos, rand_arm_pos)
         return ob
 
 
