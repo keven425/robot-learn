@@ -241,7 +241,7 @@ class PPO(nn.Module):
         t = 0
         ac = env.action_space.sample()  # not used, just so we have the datatype
         new = True  # marks if we're on first timestep of an episode
-        (image, joint), hid_ob = env.reset(rand_obj_pos=True, rand_arm_pos=True)
+        (image, joint), hid_ob = env.reset(rand_obj_pos=True)
         _image = rearrange_image(image)
 
         cur_ep_ret = 0  # return in current episode
@@ -297,12 +297,12 @@ class PPO(nn.Module):
                 ep_lens.append(cur_ep_len)
                 cur_ep_ret = 0
                 cur_ep_len = 0
-                (image, joint), hid_ob = env.reset(rand_obj_pos=True, rand_arm_pos=True)
+                (image, joint), hid_ob = env.reset(rand_obj_pos=True)
             t += 1
 
 
     def record_video(self, pi, env):
-        ob, _ = env.reset(rand_obj_pos=True, rand_arm_pos=False)
+        ob, _ = env.reset(rand_obj_pos=True)
         done = False
         env.env.start_record_video()
         while not done:
@@ -314,7 +314,7 @@ class PPO(nn.Module):
             ob, _, _, done, _ = env.step(ac)
             env.render()
         env.env.stop_record_video()
-        env.reset(rand_obj_pos=True, rand_arm_pos=False)
+        env.reset(rand_obj_pos=True)
 
 
 

@@ -175,7 +175,7 @@ class PushObjectEnv(utils.EzPickle):
         return dsq_endeff_obj
 
 
-    def reset(self, rand_obj_pos, rand_arm_pos):
+    def reset(self, rand_obj_pos=False, rand_arm_pos=False):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -297,14 +297,14 @@ class PushObjectEnv(utils.EzPickle):
         init_qpos = self.init_qpos
         if rand_obj_pos:
             # center around zero, with radius 0.03
-            obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            # radiuses = self.radiuses[:self.level]
-            # radius = np.random.choice(radiuses)
-            # print('level: %d, sampled radius: %f' % (self.level, radius))
-            # angle = np.random.uniform(-math.pi, math.pi)
-            # x = np.cos(angle) * radius
-            # y = np.sin(angle) * radius
-            # obj_pos = np.array([x, y])
+            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
+            radiuses = self.radiuses[:self.level]
+            radius = np.random.choice(radiuses)
+            print('level: %d, sampled radius: %f' % (self.level, radius))
+            angle = np.random.uniform(-math.pi, math.pi)
+            x = np.cos(angle) * radius
+            y = np.sin(angle) * radius
+            obj_pos = np.array([x, y])
         else:
             obj_pos = [.05, .05]
         init_qpos[:2] = obj_pos
@@ -490,9 +490,10 @@ def save_video(queue, filename, fps):
 
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
-    for i in range(9999999):
-        env.reset(rand_obj_pos=True, rand_arm_pos=True)
-        env.render()
+    env.reset(rand_obj_pos=True, rand_arm_pos=False)
+    # for i in range(9999999):
+    #     env.reset(rand_obj_pos=True, rand_arm_pos=False)
+    #     env.render()
 
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
