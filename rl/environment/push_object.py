@@ -154,10 +154,7 @@ class PushObjectEnv(utils.EzPickle):
     def get_hidden_ob(self):
         cube_com = self.get_body_com(self.obj_name)[:2]
         endeff_com = self.get_body_com(self.endeff_name)[:2]
-        return np.concatenate([
-            cube_com,
-            endeff_com
-        ])
+        return cube_com
 
 
     def get_dsq_obj_goal(self):

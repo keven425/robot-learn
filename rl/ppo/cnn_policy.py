@@ -16,8 +16,8 @@ class CnnPolicy(nn.Module):
     self.gpu = gpu
     image_h, image_w, n_channel = image_dim
     obj_com_dim = 2
-    endeff_com_dim = 2
-    cnn_n_out = obj_com_dim + endeff_com_dim
+    # endeff_com_dim = 2
+    cnn_n_out = obj_com_dim
     self.cnn_encoder = CnnEncoder(name, image_h, image_w, n_channel, n_out=cnn_n_out, gpu=gpu)
 
     ob_dim = ob_space.shape[0]
