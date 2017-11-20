@@ -151,7 +151,8 @@ class PushObjectEnv(utils.EzPickle):
         self.t = 0
         self.sim.reset()
         if rand_goal_pos:
-            radius = 0.075
+            max_radius = 0.075
+            radius = np.random.uniform(0., max_radius)
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
