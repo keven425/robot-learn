@@ -270,20 +270,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
-        init_qpos = self.init_qpos
-        if rand_init_pos:
-            # center around zero, with radius 0.03
-            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radiuses = self.radiuses[:self.level]
-            radius = np.random.choice(radiuses)
-            print('level: %d, sampled radius: %f' % (self.level, radius))
-            angle = np.random.uniform(-math.pi, math.pi)
-            x = np.cos(angle) * radius
-            y = np.sin(angle) * radius
-            obj_pos = np.array([x, y])
-        else:
-            obj_pos = [0., 0.]
-        init_qpos[:2] = obj_pos
+        self.goal_pos = goal_pos
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
 
