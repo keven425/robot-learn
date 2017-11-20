@@ -199,6 +199,7 @@ class PPO(nn.Module):
                 self.env.env.level_up()
                 lenbuffer = deque(maxlen=100)  # reset buffers for running means
                 rewbuffer = deque(maxlen=100)
+                best_rew = 0. # reset best reward
             lenbuffer.extend(lens)
             rewbuffer.extend(rews)
             logger.record_tabular("EpLenMean", np.mean(lenbuffer))
