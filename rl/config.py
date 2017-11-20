@@ -36,7 +36,7 @@ class Config():
     self.clip_param = 0.2
     self.beta = 1.
     self.entcoeff = 0.001
-    self.optim_epochs = 5
+    self.optim_epochs = 10
     self.optim_stepsize = 4e-4
     self.optim_batchsize = 600
     self.gamma = 0.99
