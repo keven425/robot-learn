@@ -381,12 +381,14 @@ class PushObjectEnv(utils.EzPickle):
         # actuator velocity can be out of [-1, 1] range, clip
         # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
+        pos_cos = np.cos(actuator_pos)
+        pos_sin = np.sin(actuator_pos)
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
         return np.concatenate([
             cube_com,
-            np.cos(actuator_pos),
-            np.sin(actuator_pos),
+            pos_cos,
+            pos_sin,
             actuator_pos
         ])
 
