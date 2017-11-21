@@ -388,13 +388,62 @@ def save_video(queue, filename, fps):
     writer.close()
 
 
+def get_joint_angles():
+    import pybullet as p
+
+    p.connect(p.DIRECT)
+    # clid = p.connect(p.SHARED_MEMORY)
+    # if (clid<0):
+    # 	p.connect(p.GUI)
+    id = p.loadURDF("../urdf/abb.urdf", basePosition=[0, 0, 0])
+    p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
+    p.setGravity(0, 0, 0)
+    p.setRealTimeSimulation(0)
+
+    endeff_i = 6
+    numJoints = p.getNumJoints(id)
+
+    # lower limits for null space
+    ll = [0., -2.094, -1.48353, 0.785, -2.094, -2.094, -2.094]
+    # upper limits for null space
+    ul = [0., 2.094, 1.48353, 2.356, 2.094, 2.094, 2.094]
+    # joint ranges for null space
+    jr = [0., 4, 5.8, 4, 5.8, 4, 6]
+    # restposes for null space
+    rp = [0, 0, 0, 0, 0, 0, 0]
+    # joint damping coefficents
+    jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+
+    for i in range(numJoints):
+        p.resetJointState(id, i, rp[i])
+
+    useNullSpace = 0
+    ikSolver = 0
+
+    pos = [0., 0., -.5]
+    # end effector points down, not up (in case useOrientation==1)
+    orn = p.getQuaternionFromEuler([0, 0, 0])
+
+    if (useNullSpace == 1):
+        jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
+    else:
+        jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+
+    print(jointPoses)
+    return jointPoses
+
 
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
     env.reset()
+    arm_pos = get_joint_angles()
+    env.init_qpos[-6:] = arm_pos
+    env.set_state(env.init_qpos, env.init_qvel)
+    for i in range(30000000):
+        env.render()
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
-    for j in range(3):
+    # for j in range(3):
         # env.start_record_video()
         # for i in range(3000):
         #     acts = np.random.normal(zeros, ones)
@@ -403,14 +452,14 @@ if __name__ == '__main__':
         #     if done:
         #         env.reset()
         # env.stop_record_video()
-        for i in range(500):
-            env.step([0., 0., 0., 0., 0., 0.])
-            env.render()
-        for i in range(5000):
-            # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 0., 1., 0., 0., 0.])
-            env.render()
-        for i in range(5000):
-            # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([0., -1., -1., 0., 0., 0.])
-            env.render()
+        # for i in range(1500):
+        #     env.step([0., 0., 0., 0., 0., 0.])
+        #     env.render()
+        # for i in range(1500):
+        #     # env.step([1., 1., 1., 1., 1., 1.])
+        #     env.step([ 5.18438132703e-10, -5.14409577664 + 2 * math.pi, -3.35224287201 + 2 * math.pi, -1.32161743491e-09, -0.444827067233, 0.0])
+        #     env.render()
+        # for i in range(1500):
+        #     env.step([-1., -1., -1., -1., -1., -1.])
+        #     # env.step([0., -1., -1., 0., 0., 0.])
+        #     env.render()
