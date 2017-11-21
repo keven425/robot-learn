@@ -25,18 +25,16 @@
 # pass
 #
 
-
 import pybullet as p
+import math
 
-p.connect(p.DIRECT)
-# clid = p.connect(p.SHARED_MEMORY)
-# if (clid<0):
-# 	p.connect(p.GUI)
-id = p.loadURDF("../urdf/abb.urdf", basePosition=[0, 0, 0])
+# p.connect(p.DIRECT)
+p.connect(p.GUI)
+# p.loadURDF("../urdf/plane.urdf", basePosition=[0, 0, 0])
+id = p.loadURDF("../urdf/abb.urdf", basePosition=[-0.25, 0, 0])
 p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
-p.setGravity(0,0,0)
-p.setRealTimeSimulation(0)
-
+p.setGravity(0, 0, 0)
+p.setRealTimeSimulation(1)
 
 endeff_i = 6
 numJoints = p.getNumJoints(id)
@@ -53,24 +51,26 @@ rp = [0, 0, 0, 0, 0, 0, 0]
 jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
 for i in range(numJoints):
-  p.resetJointState(id, i, rp[i])
+    p.resetJointState(id, i, rp[i])
 
 useNullSpace = 0
 ikSolver = 0
+t = 0.
 
-# set target position, orientation
-pos = [1, 0., 0.]
-orn = p.getQuaternionFromEuler([0, 0, 0])
+while (True):
+  # pos = [0., 0., 0.1]
+  pos = [0., 0.1 * math.cos(t), 0.1 * math.sin(t)]
+  t = t + 0.001
+  # end effector points down, not up (in case useOrientation==1)
+  orn = p.getQuaternionFromEuler([0, 0, 0])
 
-if (useNullSpace == 1):
-  jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
-else:
-  jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+  if (useNullSpace == 1):
+    jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
+  else:
+    # jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+    jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, solver=ikSolver)
+  print(jointPoses)
 
-print(jointPoses)
-# while (True):
-#   i = 1
-#   position = 1.
-#   p.setJointMotorControl2(bodyIndex=id, jointIndex=i, controlMode=p.POSITION_CONTROL, targetPosition=position,
-#                           targetVelocity=0, force=1, positionGain=0.03, velocityGain=1)
-#   p.stepSimulation()
+  for i, position in enumerate(jointPoses):
+    p.setJointMotorControl2(bodyIndex=id, jointIndex=i, controlMode=p.POSITION_CONTROL, targetPosition=position,
+                          targetVelocity=0, positionGain=1, velocityGain=10)
