@@ -399,16 +399,15 @@ def save_video(queue, filename, fps):
     writer.close()
 
 
-def get_joint_angles():
+
+if __name__ == '__main__':
     import pybullet as p
 
     p.connect(p.DIRECT)
-    # clid = p.connect(p.SHARED_MEMORY)
-    # if (clid<0):
-    # 	p.connect(p.GUI)
-    id = p.loadURDF("../urdf/abb.urdf", basePosition=[0, 0, 0])
+    # p.connect(p.GUI)
+    id = p.loadURDF("../urdf/abb.urdf", basePosition=[-0.25, 0, 0])
     p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
-    p.setGravity(0, 0, 0)
+    p.setGravity(0, 0, -1)
     p.setRealTimeSimulation(0)
 
     endeff_i = 6
@@ -430,27 +429,26 @@ def get_joint_angles():
 
     useNullSpace = 0
     ikSolver = 0
+    t = 0.
 
-    pos = [0., 0., -.5]
-    # end effector points down, not up (in case useOrientation==1)
-    orn = p.getQuaternionFromEuler([0, 0, 0])
-
-    if (useNullSpace == 1):
-        jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
-    else:
-        jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
-
-    print(jointPoses)
-    return jointPoses
-
-
-if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
     env.reset()
-    arm_pos = get_joint_angles()
-    env.init_qpos[-6:] = arm_pos
-    env.set_state(env.init_qpos, env.init_qvel)
     for i in range(30000000):
+        pos = [-0.2, 0.1 * math.cos(t), 0.1 * math.sin(t)]
+        print(pos)
+        t = t + 0.001
+
+        # end effector points down, not up (in case useOrientation==1)
+        orn = p.getQuaternionFromEuler([0, 0, 0])
+
+        if (useNullSpace == 1):
+            jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
+        else:
+            # jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+            jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, solver=ikSolver)
+
+        env.init_qpos[-6:] = jointPoses
+        env.set_state(env.init_qpos, env.init_qvel)
         env.render()
     # zeros = np.zeros(shape=[6])
     # ones = np.ones(shape=[6])
