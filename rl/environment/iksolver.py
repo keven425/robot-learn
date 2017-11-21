@@ -26,3 +26,51 @@
 #
 
 
+import pybullet as p
+
+p.connect(p.DIRECT)
+# clid = p.connect(p.SHARED_MEMORY)
+# if (clid<0):
+# 	p.connect(p.GUI)
+id = p.loadURDF("../urdf/abb.urdf", basePosition=[0, 0, 0])
+p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
+p.setGravity(0,0,0)
+p.setRealTimeSimulation(0)
+
+
+endeff_i = 6
+numJoints = p.getNumJoints(id)
+
+# lower limits for null space
+ll = [0., -2.094, -1.48353, 0.785, -2.094, -2.094, -2.094]
+# upper limits for null space
+ul = [0., 2.094, 1.48353, 2.356, 2.094, 2.094, 2.094]
+# joint ranges for null space
+jr = [0., 4, 5.8, 4, 5.8, 4, 6]
+# restposes for null space
+rp = [0, 0, 0, 0, 0, 0, 0]
+# joint damping coefficents
+jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+
+for i in range(numJoints):
+  p.resetJointState(id, i, rp[i])
+
+useNullSpace = 0
+ikSolver = 0
+
+# set target position, orientation
+pos = [1, 0., 0.]
+orn = p.getQuaternionFromEuler([0, 0, 0])
+
+if (useNullSpace == 1):
+  jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
+else:
+  jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+
+print(jointPoses)
+# while (True):
+#   i = 1
+#   position = 1.
+#   p.setJointMotorControl2(bodyIndex=id, jointIndex=i, controlMode=p.POSITION_CONTROL, targetPosition=position,
+#                           targetVelocity=0, force=1, positionGain=0.03, velocityGain=1)
+#   p.stepSimulation()
