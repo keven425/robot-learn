@@ -58,6 +58,7 @@ class CnnEncoder(nn.Module):
         # compute output
         x = x.view(x.size(0), -1)  # flatten
         hid = self.fc(x)
+        hid = self.relu(hid)
         pred = self.fc_out(hid)
         return pred, hid
 
