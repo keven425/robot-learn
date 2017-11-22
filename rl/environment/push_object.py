@@ -132,11 +132,11 @@ class PushObjectEnv(utils.EzPickle):
         ob = self._get_obs(sample_image)
 
         dsq_obj_goal = self.get_dsq_obj_goal()
-        rew_obj_goal = 0.1 * np.exp(-800. * dsq_obj_goal)
+        rew_obj_goal = 0.1 * (np.exp(-800. * dsq_obj_goal) - 1.)
 
         # distance between object and robot end-effector
         dsq_endeff_obj = self.get_dsq_endeff_obj()
-        rew_endeff_obj = 0.02 * np.exp(-100. * dsq_endeff_obj)
+        rew_endeff_obj = 0.02 * (np.exp(-100. * dsq_endeff_obj) - 1.)
         reward = rew_obj_goal + rew_endeff_obj
 
         # use distances as hidden observations
