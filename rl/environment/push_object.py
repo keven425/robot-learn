@@ -390,74 +390,75 @@ def save_video(queue, filename, fps):
 
 
 if __name__ == '__main__':
-    import pybullet as p
-
-    p.connect(p.DIRECT)
-    # p.connect(p.GUI)
-    id = p.loadURDF("../urdf/abb.urdf", basePosition=[-0.25, 0, 0])
-    p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
-    p.setGravity(0, 0, -1)
-    p.setRealTimeSimulation(0)
-
-    endeff_i = 6
-    numJoints = p.getNumJoints(id)
-
-    # lower limits for null space
-    ll = [0., -2.094, -1.48353, 0.785, -2.094, -2.094, -2.094]
-    # upper limits for null space
-    ul = [0., 2.094, 1.48353, 2.356, 2.094, 2.094, 2.094]
-    # joint ranges for null space
-    jr = [0., 4, 5.8, 4, 5.8, 4, 6]
-    # restposes for null space
-    rp = [0, 0, 0, 0, 0, 0, 0]
-    # joint damping coefficents
-    jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-
-    for i in range(numJoints):
-        p.resetJointState(id, i, rp[i])
-
-    useNullSpace = 0
-    ikSolver = 0
-    t = 0.
+    # import pybullet as p
+    #
+    # p.connect(p.DIRECT)
+    # # p.connect(p.GUI)
+    # id = p.loadURDF("../urdf/abb.urdf", basePosition=[-0.25, 0, 0])
+    # p.resetBasePositionAndOrientation(id, [0, 0, 0], [0, 0, 0, 1])
+    # p.setGravity(0, 0, -1)
+    # p.setRealTimeSimulation(0)
+    #
+    # endeff_i = 6
+    # numJoints = p.getNumJoints(id)
+    #
+    # # lower limits for null space
+    # ll = [0., -2.094, -1.48353, 0.785, -2.094, -2.094, -2.094]
+    # # upper limits for null space
+    # ul = [0., 2.094, 1.48353, 2.356, 2.094, 2.094, 2.094]
+    # # joint ranges for null space
+    # jr = [0., 4, 5.8, 4, 5.8, 4, 6]
+    # # restposes for null space
+    # rp = [0, 0, 0, 0, 0, 0, 0]
+    # # joint damping coefficents
+    # jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    #
+    # for i in range(numJoints):
+    #     p.resetJointState(id, i, rp[i])
+    #
+    # useNullSpace = 0
+    # ikSolver = 0
+    # t = 0.
+    #
+    # env = PushObjectEnv(frame_skip=1)
+    # env.reset()
+    # for i in range(30000000):
+    #     pos = [-0.2, 0.1 * math.cos(t), 0.1 * math.sin(t)]
+    #     print(pos)
+    #     t = t + 0.001
+    #
+    #     # end effector points down, not up (in case useOrientation==1)
+    #     orn = p.getQuaternionFromEuler([0, 0, 0])
+    #
+    #     if (useNullSpace == 1):
+    #         jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
+    #     else:
+    #         # jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
+    #         jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, solver=ikSolver)
+    #
+    #     env.init_qpos[-6:] = jointPoses
+    #     env.set_state(env.init_qpos, env.init_qvel)
+    #     env.render()
 
     env = PushObjectEnv(frame_skip=1)
     env.reset()
-    for i in range(30000000):
-        pos = [-0.2, 0.1 * math.cos(t), 0.1 * math.sin(t)]
-        print(pos)
-        t = t + 0.001
-
-        # end effector points down, not up (in case useOrientation==1)
-        orn = p.getQuaternionFromEuler([0, 0, 0])
-
-        if (useNullSpace == 1):
-            jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, ll, ul, jr, rp)
-        else:
-            # jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, orn, jointDamping=jd, solver=ikSolver)
-            jointPoses = p.calculateInverseKinematics(id, endeff_i, pos, solver=ikSolver)
-
-        env.init_qpos[-6:] = jointPoses
-        env.set_state(env.init_qpos, env.init_qvel)
-        env.render()
-    # zeros = np.zeros(shape=[6])
-    # ones = np.ones(shape=[6])
-    # for j in range(3):
-        # env.start_record_video()
-        # for i in range(3000):
-        #     acts = np.random.normal(zeros, ones)
-        #     _, _, done, _ = env.step(acts)
-        #     env.render()
-        #     if done:
-        #         env.reset()
-        # env.stop_record_video()
-        # for i in range(1500):
-        #     env.step([0., 0., 0., 0., 0., 0.])
-        #     env.render()
-        # for i in range(1500):
-        #     # env.step([1., 1., 1., 1., 1., 1.])
-        #     env.step([ 5.18438132703e-10, -5.14409577664 + 2 * math.pi, -3.35224287201 + 2 * math.pi, -1.32161743491e-09, -0.444827067233, 0.0])
-        #     env.render()
-        # for i in range(1500):
-        #     env.step([-1., -1., -1., -1., -1., -1.])
-        #     # env.step([0., -1., -1., 0., 0., 0.])
-        #     env.render()
+    zeros = np.zeros(shape=[6])
+    ones = np.ones(shape=[6])
+    for j in range(3):
+        for i in range(1500):
+            jacp = env.data.get_body_jacp('endeffector')
+            jacp = jacp.reshape((3, 12))
+            jacp = jacp[:, -6:]
+            jacq_inv = np.invert(jacp.T.dot(jacp)).dot(jacp)
+            d_endeff = [.1, 0., 0.]
+            d_joints = jacq_inv.dot(d_endeff)
+            env.step([0., 0., 0., 0., 0., 0.])
+            env.render()
+        for i in range(1500):
+            # env.step([1., 1., 1., 1., 1., 1.])
+            env.step([ 5.18438132703e-10, -5.14409577664 + 2 * math.pi, -3.35224287201 + 2 * math.pi, -1.32161743491e-09, -0.444827067233, 0.0])
+            env.render()
+        for i in range(1500):
+            env.step([-1., -1., -1., -1., -1., -1.])
+            # env.step([0., -1., -1., 0., 0., 0.])
+            env.render()
