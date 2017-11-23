@@ -1,0 +1,42 @@
+<mujoco model="dobot_push">
+    <compiler angle="radian" />
+    <!--default-->
+    <default>
+        <!--need to define ctrllimited='false' in dobot.xml, because velocity config will override polisition config-->
+        <velocity kv="1"/>
+        <general gainprm="100" ctrlrange='-1 1' ctrllimited='true'/>
+        <geom friction="1 0.1 0.1"/>
+    </default>
+
+    <asset>
+        <texture builtin="checker" type="2d" height="100" width="100" mark="none" markrgb="1 1 1" name="square_box" rgb1="0. 0. 0." rgb2="1. 1. 1."/>
+        <material name="plane" texrepeat="5 5" texture="square_box"/>
+    </asset>
+
+    <!--environment-->
+    <worldbody>
+        <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
+        <!--two link-->
+        <body name="link1" pos="0 0 0.16">
+            <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
+            <joint name="joint1" pos="0 0 0" axis="0 0 1" limited="true" range="-3.14 3.14" />
+            <geom size="0.04 0.0025 0.0025" pos="0.04 0 0" type="box" rgba="1 1 0 1" />
+            <body name="link2" pos="0.08 0 0">
+                <inertial pos="0 0 0" quat="0.707107 0.707107 0 0" mass=".1" diaginertia="1 1 0.5" />
+                <joint name="joint2" pos="0 0 0" axis="0 0 1" limited="true" range="-3.14 3.14" />
+                <geom size="0.04 0.0025 0.0025" pos="0.04 0 0" type="box" rgba="1 1 1 1" />
+                <body name="endeffector" pos="0.08 0 0">
+                    <geom size="0.0025 0.0025 0.0025" pos="0 0 0" type="box" rgba="1 0 1 1" />
+                </body>
+            </body>
+        </body>
+    </worldbody>
+    <actuator>
+        <!--need to define ctrllimited='false' for <position>, because velocity config will override polisition config-->
+        <velocity name="joint1_velocity" joint="joint1" ctrllimited="false"/>
+		<velocity name="joint2_velocity" joint="joint2" ctrllimited="false"/>
+        <general name="joint1_force" joint="joint1" />
+        <general name="joint2_force" joint="joint2" />
+	</actuator>
+</mujoco>
+
