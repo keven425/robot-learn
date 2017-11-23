@@ -10,23 +10,19 @@ import numpy as np
 import mujoco_py
 
 
-class PushObjectEnv(utils.EzPickle):
+class SimpleEnv(utils.EzPickle):
 
     def __init__(self, frame_skip, max_timestep=3000, log_dir='', seed=None):
         self.frame_skip = frame_skip
 
-        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'push_object.xml')
+        model_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'simple.xml')
         self.model = mujoco_py.load_model_from_path(model_path)
         self.sim = mujoco_py.MjSim(self.model, nsubsteps=frame_skip)
         self.data = self.sim.data
         self.viewer = mujoco_py.MjViewer(self.sim)
         self.joint_names = list(self.sim.model.joint_names)
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
-        self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
-        self.goal_pos = np.array([0., 0.])
-        self.radiuses = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.075]
-        self.level = len(self.radiuses)
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -119,31 +115,12 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.do_simulation(action)
         ob = self._get_obs()
-        obj_pos = self.get_body_com(self.obj_name)
-        obj_pos_xy = obj_pos[:2]
-
-        # distance between object and goal
-        dist_sq_og = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * (np.exp(-800. * dist_sq_og) - 1.)
-
-        # distance between object and robot end-effector
-        endeff_pos = self.get_body_com(self.endeff_name)
-        dist_sq_eo = np.sum(np.square(endeff_pos - obj_pos))
-        rew_endeff_obj = 0.05 * (np.exp(-50. * dist_sq_eo) - 1.)
-        reward = rew_obj_goal + rew_endeff_obj
-
-        # reward_ctrl = -np.square(action).mean()
-        # reward = rew_obj_goal + reward_ctrl
+        reward = 0.
         done = False
-        info = dict()
-        if self.t > self.max_timestep:
-            done = True
-            info['dist_goal'] = np.sqrt(dist_sq_og)
-        self.t += 1
-        return ob, reward, done, info
+        return ob, reward, done, dict()
 
 
-    def reset(self, rand_init_pos=False, init_pos=[0., 0.]):
+    def reset(self):
         """Resets the state of the environment and returns an initial observation.
 
         Returns: observation (object): the initial observation of the
@@ -151,7 +128,7 @@ class PushObjectEnv(utils.EzPickle):
         """
         self.t = 0
         self.sim.reset()
-        ob = self.reset_model(rand_init_pos, init_pos)
+        ob = self.reset_model()
         return ob
 
 
@@ -228,60 +205,16 @@ class PushObjectEnv(utils.EzPickle):
           self._closed = True
 
 
-    def start_record_video(self, path=None):
-        if self.recording:
-            print('record video in progress. calling stop before start.')
-            self.stop_record_video()
-        self.recording = True
-        self.viewer._record_video = True
-        self.viewer._hide_overlay = True
-        fps = (1 / self.viewer._time_per_render)
-        path = path or (self.video_path % self.video_idx)
-        self.video_process = Process(target=save_video,
-                                     args=(self.viewer._video_queue, path, fps))
-        self.video_process.start()
-
-
-    def stop_record_video(self):
-        self.viewer._video_queue.put(None)
-        self.video_process.join()
-        self.video_idx += 1
-        self.recording = False
-        print('finished recording video %d' % self.video_idx)
-
-    # ----------------------------
-
     @property
     def spec(self):
         return None
 
-    def reset_model(self, rand_init_pos, init_pos=[0., 0.]):
+    def reset_model(self):
         """
         Reset the robot degrees of freedom (qpos and qvel).
         """
-        init_qpos = self.init_qpos
-        if rand_init_pos:
-            # center around zero, with radius 0.03
-            # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            max_radius = self.radiuses[self.level - 1]
-            radius = np.random.uniform(0., max_radius)
-            print('level: %d, max_radius: %f, radius: %f' % (self.level, max_radius, radius))
-            angle = np.random.uniform(-math.pi, math.pi)
-            x = np.cos(angle) * radius
-            y = np.sin(angle) * radius
-            obj_pos = np.array([x, y])
-        else:
-            obj_pos = init_pos
-        init_qpos[:2] = obj_pos
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
-
-
-    def level_up(self):
-        self.level += 1
-        n_levels = len(self.radiuses)
-        self.level = np.minimum(self.level, n_levels)
-        print('increasing level to: %d' % self.level)
 
 
     def viewer_setup(self):
@@ -375,60 +308,51 @@ class PushObjectEnv(utils.EzPickle):
         # actuator velocity can be out of [-1, 1] range, clip
         # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
-        pos_cos = np.cos(actuator_pos)
-        pos_sin = np.sin(actuator_pos)
         actuator_pos = self.normalize_pos(actuator_pos)
-        cube_com = self.get_body_com("cube")
         return np.concatenate([
-            cube_com,
-            pos_cos,
-            pos_sin,
+            np.cos(actuator_pos),
+            np.sin(actuator_pos),
             actuator_pos
         ])
 
 
-# Separate Process to save video. This way visualization is
-# less slowed down.
-def save_video(queue, filename, fps):
-    writer = imageio.get_writer(filename, fps=fps)
-    while True:
-        frame = queue.get()
-        if frame is None:
-            break
-        writer.append_data(frame)
-    writer.close()
-
 
 def get_joint_angles_ik(d_endeff):
-    jac = env.data.get_body_jacr('endeffector')
-    jac = jac.reshape((3, 12))
-    jac = jac[:, -6:]
+    jac = env.data.get_body_jacp('endeffector')
+    jac = jac.reshape((3, 2))
     jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
     # jacq_inv = jac.T
     d_joints = jacq_inv.dot(d_endeff)
-    max = np.abs(d_joints).max()
     print(d_joints)
+    max = np.abs(d_joints).max()
     if max > 1.:
-        d_joints = d_joints / max
+      d_joints = d_joints / max
+    else:
+      print('d_joints are all zero')
     return d_joints
 
 
 if __name__ == '__main__':
-    env = PushObjectEnv(frame_skip=1)
+    env = SimpleEnv(frame_skip=10)
     env.reset()
-    for i in range(100):
-        env.step([1., 1., 1., 1., 1., 1.])
+    env.data.qpos[:] = [-1, 2]
+    env.sim.step()
+    env.sim.forward()
     for j in range(100):
-        for i in range(3000):
-            d_joints = get_joint_angles_ik([0., 0., .1])
-            # env.data.qvel[-6:] = d_joints
-            # env.sim.step()
+        for i in range(100):
             # env.sim.forward()
+            d_joints = get_joint_angles_ik([0., -1., 0.])
+            # qpos = env.data.qpos + d_joints
+            # env.data.qpos[:] = qpos
+            # # env.data.qvel[:] = d_joints
+            # env.sim.step()
             env.step(d_joints)
             env.render()
-        for i in range(3000):
-            d_joints = get_joint_angles_ik([0., 0., -.1])
-            # env.data.qvel[-6:] = d_joints
+        for i in range(100):
+            d_joints = get_joint_angles_ik([0., 1., 0.])
+            # qpos = env.data.qpos + d_joints
+            # env.data.qpos[:] = qpos
+            # # env.data.qvel[:] = d_joints
             # env.sim.step()
             # env.sim.forward()
             env.step(d_joints)
