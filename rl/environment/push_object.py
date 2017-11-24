@@ -55,9 +55,9 @@ class PushObjectEnv(utils.EzPickle):
         assert not _done
         self.obs_dim = _ob.size
 
-        bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
-        low = bounds[:, 0]
-        high = bounds[:, 1]
+        # bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
+        low = np.array([-1.] * 6)
+        high = np.array([1.] * 6)
         self.action_space = Box(low, high)
 
         high = np.inf*np.ones(self.obs_dim)
@@ -117,7 +117,9 @@ class PushObjectEnv(utils.EzPickle):
             done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        self.do_simulation(action)
+        # transform from endeff vel to joint vel
+        joint_vels = self.get_joint_vels_ik(action)
+        self.do_simulation(joint_vels)
         ob = self._get_obs()
         obj_pos = self.get_body_com(self.obj_name)
         obj_pos_xy = obj_pos[:2]
@@ -141,6 +143,27 @@ class PushObjectEnv(utils.EzPickle):
             info['dist_goal'] = np.sqrt(dist_sq_og)
         self.t += 1
         return ob, reward, done, info
+
+
+    def get_joint_vels_ik(self, d_endeff):
+        jacp = self.data.get_body_jacp(self.endeff_name)
+        jacp = jacp.reshape((3, -1))
+        jacp = jacp[:, -6:]
+        jacr = self.data.get_body_jacr(self.endeff_name)
+        jacr = jacr.reshape((3, -1))
+        jacr = jacr[:, -6:]
+        jac = np.concatenate([jacp, jacr], axis=0)
+        _lambda_sq = .0001
+        j_jt = jac.dot(jac.T)
+        inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
+        jacq_inv = jac.T.dot(inv)
+        # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
+        # jacq_inv = jac.T
+        d_joints = jacq_inv.dot(d_endeff)
+        max = np.abs(d_joints).max()
+        if max > 1.:
+            d_joints = d_joints / max
+        return d_joints
 
 
     def reset(self, rand_init_pos=False):
@@ -354,7 +377,7 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_body_comvel(self, body_name):
         idx = self.model.body_name2id(body_name)
-        return self.data.xvelp[idx]
+        return self.data.body_xvelp[idx]
 
 
     def get_body_xmat(self, body_name):
@@ -371,19 +394,25 @@ class PushObjectEnv(utils.EzPickle):
 
     def _get_obs(self):
         actuator_pos = self.data.actuator_length[self.actuator_ids]
-        actuator_vel = self.data.actuator_velocity[self.actuator_ids]
-        # actuator velocity can be out of [-1, 1] range, clip
-        # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
         pos_cos = np.cos(actuator_pos)
         pos_sin = np.sin(actuator_pos)
-        actuator_pos = self.normalize_pos(actuator_pos)
-        cube_com = self.get_body_com("cube")
+        actuator_pos_normed = self.normalize_pos(actuator_pos)
+        actuator_vel = self.data.actuator_velocity[self.actuator_ids]
+        cube_com = self.get_body_com(self.obj_name)
+        cube_vel = self.get_body_comvel(self.obj_name)
+        endeff_com = self.get_body_com(self.endeff_name)
+        endeff_vel = self.get_body_comvel(self.endeff_name)
+
         return np.concatenate([
-            cube_com,
             pos_cos,
             pos_sin,
-            actuator_pos
+            actuator_pos_normed,
+            actuator_vel,
+            cube_com,
+            cube_vel,
+            endeff_com,
+            endeff_vel
         ])
 
 
@@ -399,43 +428,16 @@ def save_video(queue, filename, fps):
     writer.close()
 
 
-def get_joint_angles_ik(d_endeff):
-    jacp = env.data.get_body_jacp('endeffector')
-    jacp = jacp.reshape((3, 12))
-    jacp = jacp[:, -6:]
-    jacr = env.data.get_body_jacr('endeffector')
-    jacr = jacr.reshape((3, 12))
-    jacr = jacr[:, -6:]
-    jac = np.concatenate([jacp, jacr], axis=0)
-    _lambda_sq = .0001
-    j_jt = jac.dot(jac.T)
-    inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
-    jacq_inv = jac.T.dot(inv)
-    # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
-    # jacq_inv = jac.T
-    d_joints = jacq_inv.dot(d_endeff)
-    max = np.abs(d_joints).max()
-    print(d_joints)
-    if max > 1.:
-        d_joints = d_joints / max
-    return d_joints
-
-
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=10)
     env.reset()
     for j in range(100):
         for i in range(100):
-            d_joints = get_joint_angles_ik([0., 0., 1., 0., 0., 0.])
-            # env.data.qvel[-6:] = d_joints
-            # env.sim.step()
-            # env.sim.forward()
-            env.step(d_joints)
+            # first three elements are position velocities, last three elements are rotation velocities
+            actions = [0., 0., 1., 0., 0., 0.]
+            env.step(actions)
             env.render()
         for i in range(100):
-            d_joints = get_joint_angles_ik([0., 0., -1., 0., 0., 0.])
-            # env.data.qvel[-6:] = d_joints
-            # env.sim.step()
-            # env.sim.forward()
-            env.step(d_joints)
+            actions = [0., 0., -1., 0., 0., 0.]
+            env.step(actions)
             env.render()
