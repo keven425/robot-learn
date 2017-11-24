@@ -119,7 +119,7 @@ class PushObjectEnv(utils.EzPickle):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         # transform from endeff vel to joint vel
-        joint_vels = self.get_joint_vels_ik(action)
+        joint_vels, ik_norm = self.get_joint_vels_ik(action)
         self.do_simulation(joint_vels)
         ob = self._get_obs()
         obj_pos = self.get_body_com(self.obj_name)
@@ -135,8 +135,10 @@ class PushObjectEnv(utils.EzPickle):
         rew_endeff_obj = 0.02 * (np.exp(-100. * dist_sq) - 1.)
         reward = rew_obj_goal + rew_endeff_obj
 
-        # reward_ctrl = -np.square(action).mean()
-        # reward = rew_obj_goal + reward_ctrl
+        # penalty for nearing singularity
+        reward_ctrl = 0.05 * np.exp(-ik_norm)
+
+        reward = rew_obj_goal + rew_endeff_obj + reward_ctrl
         done = False
         if self.t > self.max_timestep:
             done = True
@@ -159,10 +161,11 @@ class PushObjectEnv(utils.EzPickle):
         # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
         # jacq_inv = jac.T
         d_joints = jacq_inv.dot(d_endeff)
+        l1_norm = np.square(d_joints).mean()
         max = np.abs(d_joints).max()
         if max > 1.:
             d_joints = d_joints / max
-        return d_joints
+        return d_joints, l1_norm
 
 
     def reset(self, rand_init_pos=False):
