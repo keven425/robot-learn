@@ -389,10 +389,18 @@ def save_video(queue, filename, fps):
 
 
 def get_joint_angles_ik(d_endeff):
-    jac = env.data.get_body_jacr('endeffector')
-    jac = jac.reshape((3, 12))
-    jac = jac[:, -6:]
-    jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
+    jacp = env.data.get_body_jacp('endeffector')
+    jacp = jacp.reshape((3, 12))
+    jacp = jacp[:, -6:]
+    jacr = env.data.get_body_jacr('endeffector')
+    jacr = jacr.reshape((3, 12))
+    jacr = jacr[:, -6:]
+    jac = np.concatenate([jacp, jacr], axis=0)
+    _lambda_sq = .0001
+    j_jt = jac.dot(jac.T)
+    inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
+    jacq_inv = jac.T.dot(inv)
+    # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
     # jacq_inv = jac.T
     d_joints = jacq_inv.dot(d_endeff)
     max = np.abs(d_joints).max()
@@ -403,20 +411,18 @@ def get_joint_angles_ik(d_endeff):
 
 
 if __name__ == '__main__':
-    env = PushObjectEnv(frame_skip=1)
+    env = PushObjectEnv(frame_skip=10)
     env.reset()
-    for i in range(100):
-        env.step([1., 1., 1., 1., 1., 1.])
     for j in range(100):
-        for i in range(3000):
-            d_joints = get_joint_angles_ik([0., 0., .1])
+        for i in range(100):
+            d_joints = get_joint_angles_ik([0., 0., 1., 0., 0., 0.])
             # env.data.qvel[-6:] = d_joints
             # env.sim.step()
             # env.sim.forward()
             env.step(d_joints)
             env.render()
-        for i in range(3000):
-            d_joints = get_joint_angles_ik([0., 0., -.1])
+        for i in range(100):
+            d_joints = get_joint_angles_ik([0., 0., -1., 0., 0., 0.])
             # env.data.qvel[-6:] = d_joints
             # env.sim.step()
             # env.sim.forward()
