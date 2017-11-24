@@ -320,7 +320,11 @@ class SimpleEnv(utils.EzPickle):
 def get_joint_angles_ik(d_endeff):
     jac = env.data.get_body_jacp('endeffector')
     jac = jac.reshape((3, 2))
-    jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
+    _lambda_sq = .0001
+    j_jt = jac.dot(jac.T)
+    inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(3, 3))
+    jacq_inv = jac.T.dot(inv)
+    # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
     # jacq_inv = jac.T
     d_joints = jacq_inv.dot(d_endeff)
     print(d_joints)
