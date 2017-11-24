@@ -282,7 +282,8 @@ class PushObjectEnv(utils.EzPickle):
         if rand_init_pos:
             # center around zero, with radius 0.03
             # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.075
+            max_radius = 0.075
+            radius = np.random.uniform(0., max_radius)
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
@@ -362,9 +363,13 @@ class PushObjectEnv(utils.EzPickle):
         return self.data.body_xpos[idx]
 
 
-    def get_body_comvel(self, body_name):
+    def get_body_comvelp(self, body_name):
         idx = self.model.body_name2id(body_name)
         return self.data.body_xvelp[idx]
+
+    def get_body_comvelr(self, body_name):
+        idx = self.model.body_name2id(body_name)
+        return self.data.body_xvelr[idx]
 
 
     def get_body_xmat(self, body_name):
@@ -385,9 +390,10 @@ class PushObjectEnv(utils.EzPickle):
         actuator_pos_normed = self.normalize_pos(actuator_pos)
         actuator_vel = self.data.actuator_velocity[self.actuator_ids]
         cube_com = self.get_body_com(self.obj_name)
-        cube_vel = self.get_body_comvel(self.obj_name)
+        cube_vel = self.get_body_comvelp(self.obj_name)
         endeff_com = self.get_body_com(self.endeff_name)
-        endeff_vel = self.get_body_comvel(self.endeff_name)
+        endeff_velp = self.get_body_comvelp(self.endeff_name)
+        endeff_velr = self.get_body_comvelr(self.endeff_name)
 
         return np.concatenate([
             actuator_pos_normed,
@@ -395,7 +401,8 @@ class PushObjectEnv(utils.EzPickle):
             cube_com,
             cube_vel,
             endeff_com,
-            endeff_vel
+            endeff_velp,
+            endeff_velr
         ])
 
 
