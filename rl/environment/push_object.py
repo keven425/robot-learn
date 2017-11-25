@@ -8,6 +8,7 @@ from gym import utils
 from gym.utils import seeding
 import numpy as np
 import mujoco_py
+from arm.denormalizer import Denormalizer
 
 
 class PushObjectEnv(utils.EzPickle):
@@ -47,6 +48,17 @@ class PushObjectEnv(utils.EzPickle):
         force_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
         self.joint_ranges = [self.model.jnt_range[joint] for joint in force_actuators_joints]
         self.joint_ranges = np.array(self.joint_ranges)
+
+        # ranges for endeffector control
+        endeff_ranges = [
+            [-.15, .15],
+            [-.15, .15],
+            [0., .4],
+            [-math.pi / 2., math.pi / 2.],
+            [0., math.pi / 2],
+            [-math.pi / 2., math.pi / 2.]
+        ]
+        self.endeff_denorm = Denormalizer(endeff_ranges)
 
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
@@ -118,8 +130,24 @@ class PushObjectEnv(utils.EzPickle):
             done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
+        # clip actions
+        action = np.clip(action, -1., 1.)
+        # denormalize
+        action = self.endeff_denorm.denormalize(action)
         # transform from endeff vel to joint vel
-        joint_vels, ik_norm = self.get_joint_vels_ik(action)
+        action = np.array(action)
+        endeff_com = self.get_body_com(self.endeff_name)
+        rot_matrix = self.get_body_xmat(self.endeff_name)
+        endeff_rot = rotationMatrixToEulerAngles(rot_matrix)
+        # quat = self.get_body_quat(self.endeff_name)
+        # endeff_rot = quaternion_to_euler_angle(quat)
+        # print(endeff_rot)
+        d_pos = action[:3] - endeff_com
+        d_rot = action[3:] - endeff_rot
+        d = np.concatenate([d_pos, d_rot], axis=-1)
+        d_vel = d / self.dt
+        joint_vels, ik_norm = self.get_joint_vels_ik(d_vel)
+
         self.do_simulation(joint_vels)
         ob = self._get_obs()
         obj_pos = self.get_body_com(self.obj_name)
@@ -356,6 +384,13 @@ class PushObjectEnv(utils.EzPickle):
         self.sim.forward()
 
 
+    def denormalize_pos(self, pos_ctrl):
+        low = self.joint_ranges[:, 0]
+        high = self.joint_ranges[:, 1]
+        pos_ctrl = low + (pos_ctrl + 1.) / 2. * (high - low)
+        return pos_ctrl
+
+
     def normalize_pos(self, pos):
         low = self.joint_ranges[:, 0]
         high = self.joint_ranges[:, 1]
@@ -389,7 +424,12 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_body_xmat(self, body_name):
         idx = self.model.body_name2id(body_name)
-        return self.data.body_xmat[idx]
+        return self.data.body_xmat[idx].reshape([3, 3])
+
+
+    def get_body_quat(self, body_name):
+        idx = self.model.body_name2id(body_name)
+        return self.data.body_xquat[idx]
 
 
     # def state_vector(self):
@@ -435,16 +475,69 @@ def save_video(queue, filename, fps):
     writer.close()
 
 
+# Checks if a matrix is a valid rotation matrix.
+def isRotationMatrix(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype=R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+
+
+# Calculates rotation matrix to euler angles
+# The result is the same as MATLAB except the order
+# of the euler angles ( x and z are swapped ).
+def rotationMatrixToEulerAngles(R):
+    assert (isRotationMatrix(R))
+
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2, 1], R[2, 2])
+        y = math.atan2(-R[2, 0], sy)
+        z = math.atan2(R[1, 0], R[0, 0])
+    else:
+        x = math.atan2(-R[1, 2], R[1, 1])
+        y = math.atan2(-R[2, 0], sy)
+        z = 0
+
+    euler = np.array([x, y, z])
+    print(euler)
+    return euler
+
+
+def quaternion_to_euler_angle(quat):
+    w, x, y, z = quat
+    ysqr = y * y
+
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + ysqr)
+    X = math.atan2(t0, t1)
+
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    Y = math.asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (ysqr + z * z)
+    Z = math.atan2(t3, t4)
+
+    return [X, Y, Z]
+
+
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=10)
     env.reset()
     for j in range(100):
-        for i in range(100):
+        for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 1., 0., 0., 0.]
+            actions = [0., 0., 0., 0.1, -1., 0.]
             env.step(actions)
             env.render()
-        for i in range(100):
-            actions = [0., 0., -1., 0., 0., 0.]
+        for i in range(200):
+            actions = [0., 0., 0., 0.2, 1., 0.]
             env.step(actions)
             env.render()
