@@ -504,7 +504,6 @@ def rotationMatrixToEulerAngles(R):
         z = 0
 
     euler = np.array([x, y, z])
-    print(euler)
     return euler
 
 
@@ -534,10 +533,12 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 0., 0.1, -1., 0.]
-            env.step(actions)
+            actions = [0., 0., 0., -1., 0., 0.]
+            _, rew, _, _ = env.step(actions)
             env.render()
+            print(rew)
         for i in range(200):
-            actions = [0., 0., 0., 0.2, 1., 0.]
-            env.step(actions)
+            actions = [0., 0., 0., 1., 0., 0.]
+            _, rew, _, _ = env.step(actions)
             env.render()
+            print(rew)
