@@ -125,7 +125,7 @@ class PPO(nn.Module):
         timesteps_so_far = 0
         iters_so_far = 0
         tstart = time.time()
-        best_rew = 0.
+        best_rew = -99999999.
         lenbuffer = deque(maxlen=100) # rolling buffer for episode lengths
         rewbuffer = deque(maxlen=100) # rolling buffer for episode rewards
         self.check_time_constraints()
