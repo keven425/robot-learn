@@ -50,6 +50,7 @@ class PushObjectEnv(utils.EzPickle):
 
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qpos[-6:] = [0., .4, 1.7, 0., 1., 0.] # initial position w/ endeffector close to cube
         self.init_qvel = self.data.qvel.ravel().copy()
         _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
@@ -294,7 +295,7 @@ class PushObjectEnv(utils.EzPickle):
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
-        self.set_state(self.init_qpos, self.init_qvel)
+        self.set_state(init_qpos, self.init_qvel)
         return self._get_obs()
 
 
