@@ -405,7 +405,6 @@ class PushObjectEnv(utils.EzPickle):
         actuator_vel = self.data.actuator_velocity[self.actuator_ids]
         cube_com = self.get_body_com(self.obj_name)
         cube_vel = self.get_body_comvelp(self.obj_name)
-        endeff_com = self.get_body_com(self.endeff_name)
         endeff_velp = self.get_body_comvelp(self.endeff_name)
         endeff_velr = self.get_body_comvelr(self.endeff_name)
 
@@ -416,7 +415,6 @@ class PushObjectEnv(utils.EzPickle):
             actuator_vel,
             cube_com,
             cube_vel,
-            endeff_com,
             endeff_velp,
             endeff_velr
         ])
