@@ -26,7 +26,7 @@ class PushObjectEnv(utils.EzPickle):
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
         self.radiuses = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.075]
-        self.level = 1
+        self.level = 7
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
