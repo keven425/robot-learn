@@ -30,6 +30,9 @@ Lessons:
  * normalization of inputs / batchnorm didn't work
  * fixed_kl works great
  * a100: more accurate end position
+ * negrew: helpful for learning
+ * sincos: helpful
+ * noeps: helpful for first 2000 iters
 
 
 Papers:
