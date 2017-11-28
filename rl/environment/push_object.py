@@ -50,6 +50,7 @@ class PushObjectEnv(utils.EzPickle):
 
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qpos[-6:] = [0., .4, 1.7, 0., 1., 0.] # initial position w/ endeffector close to cube
         self.init_qvel = self.data.qvel.ravel().copy()
         _ob, _reward, _done, _info = self.step(np.zeros(self.act_dim))
         assert not _done
@@ -273,7 +274,7 @@ class PushObjectEnv(utils.EzPickle):
         else:
             obj_pos = init_pos
         init_qpos[:2] = obj_pos
-        self.set_state(self.init_qpos, self.init_qvel)
+        self.set_state(init_qpos, self.init_qvel)
         return self._get_obs()
 
 
@@ -403,25 +404,15 @@ def save_video(queue, filename, fps):
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=1)
     env.reset()
-    # zeros = np.zeros(shape=[6])
-    # ones = np.ones(shape=[6])
-    for j in range(3):
-        # env.start_record_video()
-        # for i in range(3000):
-        #     acts = np.random.normal(zeros, ones)
-        #     _, _, done, _ = env.step(acts)
-        #     env.render()
-        #     if done:
-        #         env.reset()
-        # env.stop_record_video()
+    for j in range(100):
         for i in range(500):
             env.step([0., 0., 0., 0., 0., 0.])
             env.render()
-        for i in range(5000):
-            # env.step([1., 1., 1., 1., 1., 1.])
-            env.step([0., 0., 1., 0., 0., 0.])
-            env.render()
-        for i in range(5000):
-            # env.step([-1., -1., -1., -1., -1., -1.])
-            env.step([0., -1., -1., 0., 0., 0.])
-            env.render()
+        # for i in range(500):
+        #     env.step([1., 1., 1., 1., 1., 1.])
+        #     # env.step([0., 0., 1., 0., 0., 0.])
+        #     env.render()
+        # for i in range(500):
+        #     env.step([-1., -1., -1., -1., -1., -1.])
+        #     # env.step([0., 0., -1., 0., 0., 0.])
+        #     env.render()
