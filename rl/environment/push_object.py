@@ -25,7 +25,8 @@ class PushObjectEnv(utils.EzPickle):
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
         self.goal_pos = np.array([0., 0.])
-        self.rew_scale = 1.
+        self.radiuses = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.075]
+        self.level = 1
         self.dist_thresh = 0.01
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -123,7 +124,7 @@ class PushObjectEnv(utils.EzPickle):
 
         # distance between object and goal
         dist_sq = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * np.exp(-100. * self.rew_scale * dist_sq)
+        rew_obj_goal = 0.1 * np.exp(-800. * dist_sq)
 
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
@@ -260,7 +261,9 @@ class PushObjectEnv(utils.EzPickle):
         if rand_init_pos:
             # center around zero, with radius 0.03
             # obj_pos = np.random.uniform(size=[2,]) * 0.3 - 0.15
-            radius = 0.075
+            max_radius = self.radiuses[self.level - 1]
+            radius = np.random.uniform(0., max_radius)
+            print('level: %d, max_radius: %f, radius: %f' % (self.level, max_radius, radius))
             angle = np.random.uniform(-math.pi, math.pi)
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
@@ -268,11 +271,15 @@ class PushObjectEnv(utils.EzPickle):
         else:
             obj_pos = [0., 0.]
         init_qpos[:2] = obj_pos
-        dist_sq_default = np.sum(np.square([.15, .15]))
-        dist_sq_goal = np.sum(np.square(self.goal_pos - obj_pos))
-        self.rew_scale = dist_sq_default / dist_sq_goal
         self.set_state(self.init_qpos, self.init_qvel)
         return self._get_obs()
+
+
+    def level_up(self):
+        self.level += 1
+        n_levels = len(self.radiuses)
+        self.level = np.minimum(self.level, n_levels)
+        print('increasing level to: %d' % self.level)
 
 
     def viewer_setup(self):
@@ -374,12 +381,14 @@ class PushObjectEnv(utils.EzPickle):
         # actuator velocity can be out of [-1, 1] range, clip
         # actuator_vel = actuator_vel.clip(-1., 1.)
         # normalize pos
+        pos_cos = np.cos(actuator_pos)
+        pos_sin = np.sin(actuator_pos)
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com("cube")
         return np.concatenate([
             cube_com,
-            np.cos(actuator_pos),
-            np.sin(actuator_pos),
+            pos_cos,
+            pos_sin,
             actuator_pos
         ])
 
