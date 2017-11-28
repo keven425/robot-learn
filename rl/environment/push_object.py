@@ -42,7 +42,7 @@ class PushObjectEnv(utils.EzPickle):
         self.force_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in force_actuators]
         self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
         self.actuator_ids = self.vel_actuator_ids
-        self.act_dim = len(self.actuator_ids)
+        self.act_dim = 7
 
         # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
         force_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
@@ -54,9 +54,15 @@ class PushObjectEnv(utils.EzPickle):
             [-.15, .15],
             [-.15, .15],
             [0., .4],
-            [-math.pi / 2., math.pi / 2.],
-            [0., math.pi / 2],
-            [-math.pi / 2., math.pi / 2.]
+            # quaternions
+            [-1, 1.],
+            [-1, 1.],
+            [-1, 1.],
+            [-1, 1.]
+            # euler angles
+            # [-math.pi / 2., math.pi / 2.],
+            # [0., math.pi / 2],
+            # [-math.pi / 2., math.pi / 2.]
         ]
         self.endeff_denorm = Denormalizer(endeff_ranges)
 
@@ -69,8 +75,8 @@ class PushObjectEnv(utils.EzPickle):
         self.obs_dim = _ob.size
 
         # bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
-        low = np.array([-1.] * 6)
-        high = np.array([1.] * 6)
+        low = np.array([-1.] * self.act_dim)
+        high = np.array([1.] * self.act_dim)
         self.action_space = Box(low, high)
 
         high = np.inf*np.ones(self.obs_dim)
@@ -130,26 +136,11 @@ class PushObjectEnv(utils.EzPickle):
             done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        # clip actions
-        action = np.clip(action, -1., 1.)
-        # denormalize
-        action = self.endeff_denorm.denormalize(action)
         # transform from endeff vel to joint vel
-        action = np.array(action)
-        endeff_com = self.get_body_com(self.endeff_name)
-        rot_matrix = self.get_body_xmat(self.endeff_name)
-        endeff_rot = rotationMatrixToEulerAngles(rot_matrix)
-        # quat = self.get_body_quat(self.endeff_name)
-        # endeff_rot = quaternion_to_euler_angle(quat)
-        # print(endeff_rot)
-        d_pos = action[:3] - endeff_com
-        d_rot = action[3:] - endeff_rot
-        d = np.concatenate([d_pos, d_rot], axis=-1)
-        d_vel = d / self.dt
-        joint_vels, ik_norm = self.get_joint_vels_ik(d_vel)
-
+        joint_vels = self.action_to_joint_vel(action)
         self.do_simulation(joint_vels)
         ob = self._get_obs()
+        endeff_com = self.get_body_com(self.endeff_name)
         obj_pos = self.get_body_com(self.obj_name)
         obj_pos_xy = obj_pos[:2]
 
@@ -174,23 +165,68 @@ class PushObjectEnv(utils.EzPickle):
         self.t += 1
         return ob, reward, done, info
 
+    def action_to_joint_vel(self, action):
+        # clip actions
+        action = np.clip(action, -1., 1.)
+        # denormalize
+        action = self.endeff_denorm.denormalize(action)
+        action = np.array(action)
+        endeff_com = self.get_body_com(self.endeff_name)
+        # compute d_pos
+        d_pos = action[:3] - endeff_com
+        d_pos /= self.dt
+        # compute d_quat
+        quat = self.get_body_quat(self.endeff_name)
+        quat_targ = action[3:]
+        quat_targ = self.norm_quat(quat_targ)
+        d_quat = quat_targ - quat
+        d_quat /= self.dt
+        # compute Er, Er inverse
+        q0, q1, q2, q3 = quat
+        H = np.array([[-q1, q0, -q3, q2],
+                      [-q2, q3, q0, -q1],
+                      [-q3, -q2, q1, q0]])
+        Er_inv = H.T * .5
+        # Er = H * 2.
+        # d_quat = Er.dot(d_quat)
+        joint_vels = self.get_joint_vels_ik(d_pos, d_quat, Er_inv)
+        return joint_vels
 
-    def get_joint_vels_ik(self, d_endeff):
+    def norm_quat(self, quat):
+        quat = quat.astype(np.float64)
+        quat_norm = np.linalg.norm(quat)
+        if quat_norm > 0:
+            quat /= quat_norm
+        return quat
+
+    def get_joint_vels_ik(self, d_pos, d_quat, Er_inv):
+        d_endeff = np.concatenate([d_pos, d_quat], axis=-1)
+
+        # compute jacobian w.r.t. position
         jacp = self.data.get_body_jacp(self.endeff_name)
         jacp = jacp.reshape((3, -1))
         jacp = jacp[:, -6:]
+
+        # compute jacobian w.r.t. quaternion
         jacr = self.data.get_body_jacr(self.endeff_name)
         jacr = jacr.reshape((3, -1))
         jacr = jacr[:, -6:]
-        jac = np.concatenate([jacp, jacr], axis=0)
+        jac_quat = Er_inv.dot(jacr)
+        jac = np.concatenate([jacp, jac_quat], axis=0)
+
+        # pseudo inverse of jacobian
         _lambda_sq = .0001
         j_jt = jac.dot(jac.T)
-        inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
+        inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(7, 7))
         jacq_inv = jac.T.dot(inv)
         # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
         # jacq_inv = jac.T
+
+        # compute joint velocity
         d_joints = jacq_inv.dot(d_endeff)
         l1_norm = np.square(d_joints).mean()
+        
+        # normalize
         max = np.abs(d_joints).max()
         if max > 1.:
             d_joints = d_joints / max
@@ -533,12 +569,12 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 0., -1., 0., 0.]
+            actions = [0., 0., -.5, 0., 0., 1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
-            print(rew)
+            # print(rew)
         for i in range(200):
-            actions = [0., 0., 0., 1., 0., 0.]
+            actions = [0., 0., .3, 0., 0., -1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
-            print(rew)
+            # print(rew)
