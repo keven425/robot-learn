@@ -187,7 +187,7 @@ class PushObjectEnv(utils.EzPickle):
         d_quat = self.norm_quat(d_quat)
         # d_quat /= self.dt
         mujoco_py.functions.mju_quat2Vel(qvel, d_quat, self.dt)
-        print(qvel)
+        # print(qvel)
         # # compute Er, Er inverse
         # q0, q1, q2, q3 = quat
         # H = np.array([[-q1, q0, -q3, q2],
@@ -589,12 +589,24 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 0., 1., 0., 1., 1.]
+            actions = [0., 0., 0., .5, 0.,  1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
         for i in range(200):
-            actions = [0., 0., 0., 1., 0., -1., -1.]
+            actions = [0., 0., 0., 1., 0., .5, 0.]
+            _, rew, _, _ = env.step(actions)
+            env.render()
+            # print(rew)
+
+        for i in range(200):
+            actions = [0., 0., 0., 1., 0., -.5, 0.]
+            _, rew, _, _ = env.step(actions)
+            env.render()
+            # print(rew)
+
+        for i in range(200):
+            actions = [0., 0., 0., .5, 0., -1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
