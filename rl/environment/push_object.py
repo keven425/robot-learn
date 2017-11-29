@@ -179,8 +179,10 @@ class PushObjectEnv(utils.EzPickle):
         quat = self.get_body_quat(self.endeff_name)
         quat_targ = action[3:]
         quat_targ = self.norm_quat(quat_targ)
-        d_quat = quat_targ - quat
-        d_quat /= self.dt
+        d_quat = self.mult_quat(quat_targ, self.inv_quat(quat))
+        d_quat = self.norm_quat(d_quat)
+        # print(d_quat)
+        # d_quat /= self.dt
         # compute Er, Er inverse
         q0, q1, q2, q3 = quat
         H = np.array([[-q1, q0, -q3, q2],
@@ -198,6 +200,19 @@ class PushObjectEnv(utils.EzPickle):
         if quat_norm > 0:
             quat /= quat_norm
         return quat
+
+    def inv_quat(self, quat):
+        q0, q1, q2, q3 = quat
+        return np.array([q0, -q1, -q2, -q3])
+
+    def mult_quat(self, q1, q2):
+        w1, x1, y1, z1 = q1
+        w2, x2, y2, z2 = q2
+        w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+        x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
+        y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
+        z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
+        return np.array([w, x, y, z])
 
     def get_joint_vels_ik(self, d_pos, d_quat, Er_inv):
         d_endeff = np.concatenate([d_pos, d_quat], axis=-1)
@@ -223,6 +238,7 @@ class PushObjectEnv(utils.EzPickle):
         # jacq_inv = jac.T
 
         # compute joint velocity
+        print(d_endeff)
         d_joints = jacq_inv.dot(d_endeff)
         l1_norm = np.square(d_joints).mean()
         
@@ -569,12 +585,12 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., -.5, 0., 0., 1., 0.]
+            actions = [0., -1., 0., 1., 0., 0., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
         for i in range(200):
-            actions = [0., 0., .3, 0., 0., -1., 0.]
+            actions = [0., 1., 0., 1., 0., 0., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
