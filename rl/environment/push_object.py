@@ -10,6 +10,8 @@ import numpy as np
 import mujoco_py
 from arm.denormalizer import Denormalizer
 
+global qvel
+qvel = np.zeros(3).astype(np.float64)
 
 class PushObjectEnv(utils.EzPickle):
 
@@ -177,21 +179,24 @@ class PushObjectEnv(utils.EzPickle):
         d_pos /= self.dt
         # compute d_quat
         quat = self.get_body_quat(self.endeff_name)
-        quat_targ = action[3:]
+        quat_targ = action[3:].astype(np.float64)
         quat_targ = self.norm_quat(quat_targ)
+        # mujoco_py.functions.mj_differentiatePos(self.model, qvel, self.dt, quat, quat_targ)
+
         d_quat = self.mult_quat(quat_targ, self.inv_quat(quat))
         d_quat = self.norm_quat(d_quat)
-        # print(d_quat)
         # d_quat /= self.dt
-        # compute Er, Er inverse
-        q0, q1, q2, q3 = quat
-        H = np.array([[-q1, q0, -q3, q2],
-                      [-q2, q3, q0, -q1],
-                      [-q3, -q2, q1, q0]])
-        Er_inv = H.T * .5
-        # Er = H * 2.
-        # d_quat = Er.dot(d_quat)
-        joint_vels = self.get_joint_vels_ik(d_pos, d_quat, Er_inv)
+        mujoco_py.functions.mju_quat2Vel(qvel, d_quat, self.dt)
+        print(qvel)
+        # # compute Er, Er inverse
+        # q0, q1, q2, q3 = quat
+        # H = np.array([[-q1, q0, -q3, q2],
+        #               [-q2, q3, q0, -q1],
+        #               [-q3, -q2, q1, q0]])
+        # Er_inv = H.T * .5
+        # # Er = H * 2.
+        # # d_quat = Er.dot(d_quat)
+        joint_vels = self.get_joint_vels_ik(d_pos, qvel)
         return joint_vels
 
     def norm_quat(self, quat):
@@ -214,8 +219,8 @@ class PushObjectEnv(utils.EzPickle):
         z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
         return np.array([w, x, y, z])
 
-    def get_joint_vels_ik(self, d_pos, d_quat, Er_inv):
-        d_endeff = np.concatenate([d_pos, d_quat], axis=-1)
+    def get_joint_vels_ik(self, d_pos, qvel):
+        d_endeff = np.concatenate([d_pos, qvel], axis=-1)
 
         # compute jacobian w.r.t. position
         jacp = self.data.get_body_jacp(self.endeff_name)
@@ -226,19 +231,18 @@ class PushObjectEnv(utils.EzPickle):
         jacr = self.data.get_body_jacr(self.endeff_name)
         jacr = jacr.reshape((3, -1))
         jacr = jacr[:, -6:]
-        jac_quat = Er_inv.dot(jacr)
-        jac = np.concatenate([jacp, jac_quat], axis=0)
+        jac = np.concatenate([jacp, jacr], axis=0)
 
         # pseudo inverse of jacobian
         _lambda_sq = .0001
         j_jt = jac.dot(jac.T)
-        inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(7, 7))
+        inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
         jacq_inv = jac.T.dot(inv)
         # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
         # jacq_inv = jac.T
 
         # compute joint velocity
-        print(d_endeff)
+        # print(d_endeff)
         d_joints = jacq_inv.dot(d_endeff)
         l1_norm = np.square(d_joints).mean()
         
@@ -585,12 +589,12 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., -1., 0., 1., 0., 0., 0.]
+            actions = [0., 0., 0., 1., 0., 1., 1.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
         for i in range(200):
-            actions = [0., 1., 0., 1., 0., 0., 0.]
+            actions = [0., 0., 0., 1., 0., -1., -1.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
