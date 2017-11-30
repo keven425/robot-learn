@@ -27,6 +27,7 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_addrs = [self.sim.model.get_joint_qpos_addr(name) for name in self.joint_names]
         self.obj_name = 'cube'
         self.endeff_name = 'endeffector'
+        self.goal_site = self.model._site_name2id['goal']
         self.goal_pos = np.array([.075, 0.])
         self.radiuses = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.075]
         self.level = len(self.radiuses)
@@ -162,6 +163,8 @@ class PushObjectEnv(utils.EzPickle):
             x = np.cos(angle) * radius
             y = np.sin(angle) * radius
             goal_pos = np.array([x, y])
+            # set goal site position
+            self.model.site_pos[self.goal_site][:2] = goal_pos
         else:
             goal_pos = DEFAULT_GOAL_POS
         ob = self.reset_model(goal_pos)
