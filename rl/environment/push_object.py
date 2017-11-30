@@ -129,7 +129,7 @@ class PushObjectEnv(utils.EzPickle):
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
         dist_sq = np.sum(np.square(endeff_pos - obj_pos))
-        rew_endeff_obj = 0.02 * np.exp(-100. * dist_sq)
+        rew_endeff_obj = 0.05 * np.exp(-50. * dist_sq)
         reward = rew_obj_goal + rew_endeff_obj
 
         # reward_ctrl = -np.square(action).mean()
