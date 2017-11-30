@@ -75,7 +75,8 @@ class Monitor(Wrapper):
             self.needs_reset = True
             eprew = sum(self.rewards)
             eplen = len(self.rewards)
-            epinfo = {"r": eprew, "l": eplen, "t": round(time.time() - self.tstart, 6)}
+            dist_goal = info['dist_goal']
+            epinfo = {"r": eprew, "dist_goal": dist_goal, "t": round(time.time() - self.tstart, 6)}
             epinfo.update(self.current_metadata)
             if self.logger:
                 self.logger.writekvs(epinfo)
