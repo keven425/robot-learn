@@ -22,6 +22,8 @@
         </body>
         <!--table-->
         <geom type="plane" material="plane" size="0.15 0.15 0.1"/>
+        <!--markings for goal -->
+        <site type="box" pos="0 0 0" size="0.02 0.02 0.00001" rgba="0 255 0 1"></site>
     </worldbody>
 
     <!--robot-->
