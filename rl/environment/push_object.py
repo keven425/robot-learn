@@ -135,7 +135,7 @@ class PushObjectEnv(utils.EzPickle):
         rew_endeff_obj = 0.05 * (np.exp(-50. * dist_sq_eo) - 1.)
 
         # penalty for nearing singularity
-        reward_ctrl = 0.05 * (np.exp(-ik_norm) - 1.)
+        reward_ctrl = 0.02 * (np.exp(-ik_norm) - 1.)
 
         reward = rew_obj_goal + rew_endeff_obj + reward_ctrl
         done = False
