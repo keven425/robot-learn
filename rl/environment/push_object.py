@@ -133,10 +133,9 @@ class PushObjectEnv(utils.EzPickle):
         endeff_pos = self.get_body_com(self.endeff_name)
         dist_sq_eo = np.sum(np.square(endeff_pos - obj_pos))
         rew_endeff_obj = 0.05 * (np.exp(-50. * dist_sq_eo) - 1.)
-        reward = rew_obj_goal + rew_endeff_obj
 
         # penalty for nearing singularity
-        reward_ctrl = 0.05 * np.exp(-ik_norm)
+        reward_ctrl = 0.05 * (np.exp(-ik_norm) - 1.)
 
         reward = rew_obj_goal + rew_endeff_obj + reward_ctrl
         done = False
