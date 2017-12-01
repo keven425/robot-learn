@@ -469,15 +469,10 @@ class PushObjectEnv(utils.EzPickle):
 
     def get_body_xmat(self, body_name):
         idx = self.model.body_name2id(body_name)
-        return self.data.body_xmat[idx].reshape([3, 3])
+        return self.data.body_xmat[idx]
 
 
     def get_body_quat(self, body_name):
-        idx = self.model.body_name2id(body_name)
-        return self.data.body_xquat[idx]
-
-
-    def get_body_xquat(self, body_name):
         idx = self.model.body_name2id(body_name)
         return self.data.body_xquat[idx]
 
@@ -494,7 +489,7 @@ class PushObjectEnv(utils.EzPickle):
         cube_com = self.get_body_com(self.obj_name)
         endeff_com = self.get_body_com(self.endeff_name)
         endeff_rotmat = self.get_body_xmat(self.endeff_name)
-        endeff_quat = self.get_body_xquat(self.endeff_name)
+        endeff_quat = self.get_body_quat(self.endeff_name)
 
         return np.concatenate([
             cube_com,
