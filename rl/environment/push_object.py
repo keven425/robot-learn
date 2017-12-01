@@ -488,11 +488,12 @@ class PushObjectEnv(utils.EzPickle):
         # normalize pos
         cube_com = self.get_body_com(self.obj_name)
         endeff_com = self.get_body_com(self.endeff_name)
+        cube_2_endeff = cube_com - endeff_com
         endeff_rotmat = self.get_body_xmat(self.endeff_name)
         endeff_quat = self.get_body_quat(self.endeff_name)
 
         return np.concatenate([
-            cube_com,
+            cube_2_endeff,
             endeff_com,
             endeff_rotmat,
             endeff_quat
