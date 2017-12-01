@@ -392,6 +392,11 @@ class PushObjectEnv(utils.EzPickle):
         return self.data.body_xmat[idx]
 
 
+    def get_body_xquat(self, body_name):
+        idx = self.model.body_name2id(body_name)
+        return self.data.body_xquat[idx]
+
+
     # def state_vector(self):
     #     return np.concatenate([
     #         self.model.data.qpos.flat,
@@ -400,18 +405,17 @@ class PushObjectEnv(utils.EzPickle):
 
 
     def _get_obs(self):
-        actuator_pos = self.data.actuator_length[self.actuator_ids]
         # normalize pos
-        pos_cos = np.cos(actuator_pos)
-        pos_sin = np.sin(actuator_pos)
-        actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com(self.obj_name)
+        endeff_com = self.get_body_com(self.endeff_name)
+        endeff_rotmat = self.get_body_xmat(self.endeff_name)
+        endeff_quat = self.get_body_xquat(self.endeff_name)
 
         return np.concatenate([
             cube_com,
-            pos_cos,
-            pos_sin,
-            actuator_pos
+            endeff_com,
+            endeff_rotmat,
+            endeff_quat
         ])
 
 
