@@ -131,12 +131,12 @@ class PushObjectEnv(utils.EzPickle):
 
         # distance between object and goal
         dist_og = np.linalg.norm(obj_pos_xy - self.goal_pos)
-        rew_obj_goal = 1. * (self.prev_dist_og - dist_og)
+        rew_obj_goal = 1. * (self.prev_dist_og - dist_og - self.dt)
 
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
         dist_eo = np.linalg.norm(endeff_pos - obj_pos)
-        rew_endeff_obj = 0.5 * (self.prev_dist_eo - dist_eo)
+        rew_endeff_obj = 0.5 * (self.prev_dist_eo - dist_eo - self.dt)
         rew_dist = rew_obj_goal + rew_endeff_obj
 
         if self.t <= 0:
@@ -146,9 +146,10 @@ class PushObjectEnv(utils.EzPickle):
         self.prev_dist_eo = dist_eo
 
         # penalty for nearing singularity
-        reward_ctrl = 0.1 * (np.exp(-ik_norm) - 1.)
+        # reward_ctrl = 0.02 * (np.exp(-ik_norm) - 1.)
 
-        reward = rew_dist + reward_ctrl
+        # reward = rew_dist + reward_ctrl
+        reward = rew_dist
         done = False
         info = dict()
         if self.t > self.max_timestep:
