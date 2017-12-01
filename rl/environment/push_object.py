@@ -139,7 +139,7 @@ class PushObjectEnv(utils.EzPickle):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         # transform from endeff vel to joint vel
-        joint_vels = self.action_to_joint_vel(action)
+        joint_vels, ik_norm = self.action_to_joint_vel(action)
         self.do_simulation(joint_vels)
         ob = self._get_obs()
         endeff_com = self.get_body_com(self.endeff_name)
@@ -181,23 +181,12 @@ class PushObjectEnv(utils.EzPickle):
         quat = self.get_body_quat(self.endeff_name)
         quat_targ = action[3:].astype(np.float64)
         quat_targ = self.norm_quat(quat_targ)
-        # mujoco_py.functions.mj_differentiatePos(self.model, qvel, self.dt, quat, quat_targ)
-
         d_quat = self.mult_quat(quat_targ, self.inv_quat(quat))
         d_quat = self.norm_quat(d_quat)
-        # d_quat /= self.dt
         mujoco_py.functions.mju_quat2Vel(qvel, d_quat, self.dt)
-        # print(qvel)
-        # # compute Er, Er inverse
-        # q0, q1, q2, q3 = quat
-        # H = np.array([[-q1, q0, -q3, q2],
-        #               [-q2, q3, q0, -q1],
-        #               [-q3, -q2, q1, q0]])
-        # Er_inv = H.T * .5
-        # # Er = H * 2.
-        # # d_quat = Er.dot(d_quat)
-        joint_vels = self.get_joint_vels_ik(d_pos, qvel)
-        return joint_vels
+
+        joint_vels, ik_norm = self.get_joint_vels_ik(d_pos, qvel)
+        return joint_vels, ik_norm
 
     def norm_quat(self, quat):
         quat = quat.astype(np.float64)
