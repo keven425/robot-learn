@@ -404,22 +404,14 @@ class PushObjectEnv(utils.EzPickle):
         # normalize pos
         pos_cos = np.cos(actuator_pos)
         pos_sin = np.sin(actuator_pos)
-        actuator_pos_normed = self.normalize_pos(actuator_pos)
-        actuator_vel = self.data.actuator_velocity[self.actuator_ids]
+        actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com(self.obj_name)
-        cube_vel = self.get_body_comvelp(self.obj_name)
-        endeff_velp = self.get_body_comvelp(self.endeff_name)
-        endeff_velr = self.get_body_comvelr(self.endeff_name)
 
         return np.concatenate([
+            cube_com,
             pos_cos,
             pos_sin,
-            actuator_pos_normed,
-            actuator_vel,
-            cube_com,
-            cube_vel,
-            endeff_velp,
-            endeff_velr
+            actuator_pos
         ])
 
 
