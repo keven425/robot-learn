@@ -48,6 +48,10 @@ class PushObjectEnv(utils.EzPickle):
         self.joint_ranges = [self.model.jnt_range[joint] for joint in force_actuators_joints]
         self.joint_ranges = np.array(self.joint_ranges)
 
+        # bookkeep previous distances between bodies
+        self.prev_dist_og = 0.
+        self.prev_dist_eo = 0.
+
         # initial position/velocity of robot and box
         self.init_qpos = self.data.qpos.ravel().copy()
         # self.init_qpos[-6:] = [0., .4, 1.7, 0., 1., 0.] # initial position w/ endeffector close to cube
@@ -126,23 +130,30 @@ class PushObjectEnv(utils.EzPickle):
         obj_pos_xy = obj_pos[:2]
 
         # distance between object and goal
-        dist_sq_og = np.sum(np.square(obj_pos_xy - self.goal_pos))
-        rew_obj_goal = 0.1 * (np.exp(-800. * dist_sq_og) - 1.)
+        dist_og = np.linalg.norm(obj_pos_xy - self.goal_pos)
+        rew_obj_goal = 1. * (self.prev_dist_og - dist_og)
 
         # distance between object and robot end-effector
         endeff_pos = self.get_body_com(self.endeff_name)
-        dist_sq_eo = np.sum(np.square(endeff_pos - obj_pos))
-        rew_endeff_obj = 0.05 * (np.exp(-50. * dist_sq_eo) - 1.)
+        dist_eo = np.linalg.norm(endeff_pos - obj_pos)
+        rew_endeff_obj = 0.5 * (self.prev_dist_eo - dist_eo)
+        rew_dist = rew_obj_goal + rew_endeff_obj
+
+        if self.t <= 0:
+            # first time step
+            rew_dist = 0.
+        self.prev_dist_og = dist_og
+        self.prev_dist_eo = dist_eo
 
         # penalty for nearing singularity
-        reward_ctrl = 0.02 * (np.exp(-ik_norm) - 1.)
+        reward_ctrl = 0.1 * (np.exp(-ik_norm) - 1.)
 
-        reward = rew_obj_goal + rew_endeff_obj + reward_ctrl
+        reward = rew_dist + reward_ctrl
         done = False
         info = dict()
         if self.t > self.max_timestep:
             done = True
-            info['dist_goal'] = np.sqrt(dist_sq_og)
+            info['dist_goal'] = np.sqrt(dist_og)
         self.t += 1
         return ob, reward, done, info
 
