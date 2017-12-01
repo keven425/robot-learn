@@ -10,6 +10,10 @@ import numpy as np
 import mujoco_py
 
 
+global qvel
+qvel = np.zeros(3).astype(np.float64)
+
+
 class PushObjectEnv(utils.EzPickle):
 
     def __init__(self, frame_skip, max_timestep=3000, log_dir='', seed=None):
@@ -41,7 +45,7 @@ class PushObjectEnv(utils.EzPickle):
         self.force_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in force_actuators]
         self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
         self.actuator_ids = self.vel_actuator_ids
-        self.act_dim = len(self.actuator_ids)
+        self.act_dim = 7
 
         # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
         force_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
@@ -57,8 +61,8 @@ class PushObjectEnv(utils.EzPickle):
         self.obs_dim = _ob.size
 
         # bounds = self.model.actuator_ctrlrange[self.actuator_ids].copy()
-        low = np.array([-1.] * 6)
-        high = np.array([1.] * 6)
+        low = np.array([-1.] * self.act_dim)
+        high = np.array([1.] * self.act_dim)
         self.action_space = Box(low, high)
 
         high = np.inf*np.ones(self.obs_dim)
@@ -119,7 +123,11 @@ class PushObjectEnv(utils.EzPickle):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         # transform from endeff vel to joint vel
-        joint_vels, ik_norm = self.get_joint_vels_ik(action)
+        d_pos = action[:3]
+        d_quat = np.array(action[3:])
+        d_quat = self.norm_quat(d_quat)
+        mujoco_py.functions.mju_quat2Vel(qvel, d_quat, self.dt)
+        joint_vels, ik_norm = self.get_joint_vels_ik(d_pos, qvel)
         self.do_simulation(joint_vels)
         ob = self._get_obs()
         obj_pos = self.get_body_com(self.obj_name)
@@ -146,27 +154,46 @@ class PushObjectEnv(utils.EzPickle):
         self.t += 1
         return ob, reward, done, info
 
+    def get_joint_vels_ik(self, d_pos, qvel):
+        d_endeff = np.concatenate([d_pos, qvel], axis=-1)
 
-    def get_joint_vels_ik(self, d_endeff):
+        # compute jacobian w.r.t. position
         jacp = self.data.get_body_jacp(self.endeff_name)
         jacp = jacp.reshape((3, -1))
         jacp = jacp[:, -6:]
+
+        # compute jacobian w.r.t. quaternion
         jacr = self.data.get_body_jacr(self.endeff_name)
         jacr = jacr.reshape((3, -1))
         jacr = jacr[:, -6:]
         jac = np.concatenate([jacp, jacr], axis=0)
+
+        # pseudo inverse of jacobian
         _lambda_sq = .0001
         j_jt = jac.dot(jac.T)
         inv = np.linalg.inv(j_jt + _lambda_sq * np.eye(6, 6))
         jacq_inv = jac.T.dot(inv)
         # jacq_inv = np.linalg.inv(jac.T.dot(jac)).dot(jac.T)
         # jacq_inv = jac.T
+
+        # compute joint velocity
+        # print(d_endeff)
         d_joints = jacq_inv.dot(d_endeff)
         l1_norm = np.square(d_joints).mean()
+
+        # normalize
         max = np.abs(d_joints).max()
         if max > 1.:
             d_joints = d_joints / max
         return d_joints, l1_norm
+
+
+    def norm_quat(self, quat):
+        quat = quat.astype(np.float64)
+        quat_norm = np.linalg.norm(quat)
+        if quat_norm > 0:
+            quat /= quat_norm
+        return quat
 
 
     def reset(self, rand_init_pos=False):
@@ -433,10 +460,10 @@ if __name__ == '__main__':
     for j in range(100):
         for i in range(100):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 1., 0., 0., 0.]
+            actions = [0., 0., 0., 1., 0., 0., -1.]
             env.step(actions)
             env.render()
         for i in range(100):
-            actions = [0., 0., -1., 0., 0., 0.]
+            actions = [0., 0., 0., 1., 0., 0., 1.]
             env.step(actions)
             env.render()
