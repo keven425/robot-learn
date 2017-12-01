@@ -44,7 +44,7 @@ class PushObjectEnv(utils.EzPickle):
         self.force_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in force_actuators]
         self.vel_actuator_ids = [self.model.actuator_name2id(actuator) for actuator in vel_actuators]
         self.actuator_ids = self.vel_actuator_ids
-        self.act_dim = 7
+        self.act_dim = 6
 
         # compute array: position actuator's joint ranges, in order of self.pos_actuator_ids
         force_actuators_joints = self.model.actuator_trnid[self.actuator_ids][:, 0]
@@ -57,14 +57,14 @@ class PushObjectEnv(utils.EzPickle):
             [-.15, .15],
             [0., .4],
             # quaternions
-            [-1, 1.],
-            [-1, 1.],
-            [-1, 1.],
-            [-1, 1.]
+            # [-1, 1.],
+            # [-1, 1.],
+            # [-1, 1.],
+            # [-1, 1.]
             # euler angles
-            # [-math.pi / 2., math.pi / 2.],
-            # [0., math.pi / 2],
-            # [-math.pi / 2., math.pi / 2.]
+            [-math.pi / 2., math.pi / 2.],
+            [-math.pi / 2., math.pi / 2.],
+            [-math.pi / 2., math.pi / 2.]
         ]
         self.endeff_denorm = Denormalizer(endeff_ranges)
 
@@ -179,7 +179,8 @@ class PushObjectEnv(utils.EzPickle):
         d_pos /= self.dt
         # compute d_quat
         quat = self.get_body_quat(self.endeff_name)
-        quat_targ = action[3:].astype(np.float64)
+        euler = action[3:].astype(np.float64)
+        quat_targ = euler_to_quat(*euler)
         quat_targ = self.norm_quat(quat_targ)
         d_quat = self.mult_quat(quat_targ, self.inv_quat(quat))
         d_quat = self.norm_quat(d_quat)
@@ -564,30 +565,94 @@ def quaternion_to_euler_angle(quat):
     return [X, Y, Z]
 
 
+# epsilon for testing whether a number is close to zero
+_EPS = np.finfo(float).eps * 4.0
+
+# axis sequences for Euler angles
+_NEXT_AXIS = [1, 2, 0, 1]
+
+# map axes strings to/from tuples of inner axis, parity, repetition, frame
+_AXES2TUPLE = {
+    'sxyz': (0, 0, 0, 0), 'sxyx': (0, 0, 1, 0), 'sxzy': (0, 1, 0, 0),
+    'sxzx': (0, 1, 1, 0), 'syzx': (1, 0, 0, 0), 'syzy': (1, 0, 1, 0),
+    'syxz': (1, 1, 0, 0), 'syxy': (1, 1, 1, 0), 'szxy': (2, 0, 0, 0),
+    'szxz': (2, 0, 1, 0), 'szyx': (2, 1, 0, 0), 'szyz': (2, 1, 1, 0),
+    'rzyx': (0, 0, 0, 1), 'rxyx': (0, 0, 1, 1), 'ryzx': (0, 1, 0, 1),
+    'rxzx': (0, 1, 1, 1), 'rxzy': (1, 0, 0, 1), 'ryzy': (1, 0, 1, 1),
+    'rzxy': (1, 1, 0, 1), 'ryxy': (1, 1, 1, 1), 'ryxz': (2, 0, 0, 1),
+    'rzxz': (2, 0, 1, 1), 'rxyz': (2, 1, 0, 1), 'rzyz': (2, 1, 1, 1)}
+
+_TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
+
+def euler_to_quat(ai, aj, ak, axes='sxyz'):
+    """Return quaternion from Euler angles and axis sequence.
+
+    ai, aj, ak : Euler's roll, pitch and yaw angles
+    axes : One of 24 axis sequences as string or encoded tuple
+
+    >>> q = quaternion_from_euler(1, 2, 3, 'ryxz')
+    >>> numpy.allclose(q, [0.435953, 0.310622, -0.718287, 0.444435])
+    True
+
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
+    except (AttributeError, KeyError):
+        _TUPLE2AXES[axes]  # validation
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis + 1
+    j = _NEXT_AXIS[i + parity - 1] + 1
+    k = _NEXT_AXIS[i - parity] + 1
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        aj = -aj
+
+    ai /= 2.0
+    aj /= 2.0
+    ak /= 2.0
+    ci = math.cos(ai)
+    si = math.sin(ai)
+    cj = math.cos(aj)
+    sj = math.sin(aj)
+    ck = math.cos(ak)
+    sk = math.sin(ak)
+    cc = ci * ck
+    cs = ci * sk
+    sc = si * ck
+    ss = si * sk
+
+    q = np.empty((4,))
+    if repetition:
+        q[0] = cj * (cc - ss)
+        q[i] = cj * (cs + sc)
+        q[j] = sj * (cc + ss)
+        q[k] = sj * (cs - sc)
+    else:
+        q[0] = cj * cc + sj * ss
+        q[i] = cj * sc - sj * cs
+        q[j] = cj * ss + sj * cc
+        q[k] = cj * cs - sj * sc
+    if parity:
+        q[j] *= -1.0
+
+    return q
+
+
 if __name__ == '__main__':
     env = PushObjectEnv(frame_skip=10)
     env.reset()
     for j in range(100):
         for i in range(200):
             # first three elements are position velocities, last three elements are rotation velocities
-            actions = [0., 0., 0., .5, 0.,  1., 0.]
+            actions = [0., 0., 0., 0., -1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
         for i in range(200):
-            actions = [0., 0., 0., 1., 0., .5, 0.]
-            _, rew, _, _ = env.step(actions)
-            env.render()
-            # print(rew)
-
-        for i in range(200):
-            actions = [0., 0., 0., 1., 0., -.5, 0.]
-            _, rew, _, _ = env.step(actions)
-            env.render()
-            # print(rew)
-
-        for i in range(200):
-            actions = [0., 0., 0., .5, 0., -1., 0.]
+            actions = [0., 0., 0., 0., 1., 0.]
             _, rew, _, _ = env.step(actions)
             env.render()
             # print(rew)
