@@ -142,7 +142,6 @@ class PushObjectEnv(utils.EzPickle):
         joint_vels, ik_norm = self.action_to_joint_vel(action)
         self.do_simulation(joint_vels)
         ob = self._get_obs()
-        endeff_com = self.get_body_com(self.endeff_name)
         obj_pos = self.get_body_com(self.obj_name)
         obj_pos_xy = obj_pos[:2]
 
