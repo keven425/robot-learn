@@ -491,25 +491,20 @@ class PushObjectEnv(utils.EzPickle):
         pos_sin = np.sin(actuator_pos)
         actuator_pos = self.normalize_pos(actuator_pos)
         cube_com = self.get_body_com(self.obj_name)
+        endeff_com = self.get_body_com(self.endeff_name)
+        endeff_rotmat = self.get_body_xmat(self.endeff_name).reshape([3, 3])
+        endeff_euler = rotationMatrixToEulerAngles(endeff_rotmat)
 
         return np.concatenate([
-            cube_com,
+            actuator_pos,
             pos_cos,
             pos_sin,
-            actuator_pos
+            cube_com,
+            endeff_com,
+            endeff_euler,
+            np.sin(endeff_euler),
+            np.cos(endeff_euler)
         ])
-
-
-# Separate Process to save video. This way visualization is
-# less slowed down.
-def save_video(queue, filename, fps):
-    writer = imageio.get_writer(filename, fps=fps)
-    while True:
-        frame = queue.get()
-        if frame is None:
-            break
-        writer.append_data(frame)
-    writer.close()
 
 
 # Checks if a matrix is a valid rotation matrix.
@@ -520,11 +515,11 @@ def isRotationMatrix(R):
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < 1e-6
 
-
 # Calculates rotation matrix to euler angles
 # The result is the same as MATLAB except the order
 # of the euler angles ( x and z are swapped ).
 def rotationMatrixToEulerAngles(R):
+
     assert (isRotationMatrix(R))
 
     sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
@@ -540,28 +535,19 @@ def rotationMatrixToEulerAngles(R):
         y = math.atan2(-R[2, 0], sy)
         z = 0
 
-    euler = np.array([x, y, z])
-    return euler
+    return np.array([x, y, z])
 
 
-def quaternion_to_euler_angle(quat):
-    w, x, y, z = quat
-    ysqr = y * y
-
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + ysqr)
-    X = math.atan2(t0, t1)
-
-    t2 = +2.0 * (w * y - z * x)
-    t2 = +1.0 if t2 > +1.0 else t2
-    t2 = -1.0 if t2 < -1.0 else t2
-    Y = math.asin(t2)
-
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (ysqr + z * z)
-    Z = math.atan2(t3, t4)
-
-    return [X, Y, Z]
+# Separate Process to save video. This way visualization is
+# less slowed down.
+def save_video(queue, filename, fps):
+    writer = imageio.get_writer(filename, fps=fps)
+    while True:
+        frame = queue.get()
+        if frame is None:
+            break
+        writer.append_data(frame)
+    writer.close()
 
 
 if __name__ == '__main__':
