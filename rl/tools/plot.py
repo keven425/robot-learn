@@ -24,7 +24,7 @@ for i in range(len(tableau20)):
   tableau20[i] = (r / 255., g / 255., b / 255.)
 
 
-def plot_two_axis(filepath, batch_x, epoch_x, loss_ys, perf_ys, title, sub_title, legends, x_label, y_perf_label):
+def plot_line_mv_avg(filepath, batch_x, epoch_x, loss_ys, perf_ys, title, sub_title, legends, x_label, y_perf_label):
 
   plt.figure(figsize=(12, 9))
 
@@ -83,16 +83,33 @@ def plot_two_axis(filepath, batch_x, epoch_x, loss_ys, perf_ys, title, sub_title
   logger.info('saved fig to: \n' + filepath)
 
 
-def plot_one_axis(filepath, xs, lines, legends, title, sub_title='', x_label='', y_label=''):
+def plot(filepath, xs, lines, legends, title, sub_title='', x_label='', y_label='', plot_line=True, plot_mvavg=False):
 
   plt.figure(figsize=(12, 9))
 
   ax = plt.subplot(111)
   plt.suptitle(title, fontsize=24)
   ps = []
-  for i, line in enumerate(lines):
-    p, = ax.plot(xs, line, lw=1.0, color=tableau20[i * 2], alpha=1.)
-    ps.append(p)
+  mvavg_alpha = 1.
+  line_alpha = 1.
+  if plot_mvavg and plot_line:
+    line_alpha = .3
+
+  if plot_line:
+    for i, line in enumerate(lines):
+      p, = ax.plot(xs, line, lw=1.0, color=tableau20[i * 2], alpha=line_alpha)
+      ps.append(p)
+
+  if plot_mvavg:
+    window = xs.shape[0] // 200
+    p_avgs = []
+    for i, line in enumerate(lines):
+      mv_avg = moving_average(line, n=window)
+      p, = ax.plot(xs, mv_avg, lw=1.0, color=tableau20[i * 2], alpha=mvavg_alpha)
+      p_avgs.append(p)
+
+  if plot_mvavg:
+    ps = p_avgs # attach legent to mvavg line
 
   ax.spines["top"].set_visible(False)
   ax.spines["bottom"].set_visible(False)
@@ -133,29 +150,17 @@ def mkdir():
 
 
 def parse_log(log_path):
-  f1s_eval = []
-  losses = []
-  gradnorms = []
-
-  float_reg = '[0-9]*\.?[0-9]+'
-  loss_pattern = re.compile('loss: (' + float_reg + ')')
-  gradnorm_pattern = re.compile('gradnorm: (' + float_reg + ')')
-  f1_eval_pattern = re.compile('INFO: f1: (' + float_reg + ')')
+  import json
+  ys = []
 
   with open(log_path, 'r') as fs:
+    next(fs)
     for line in fs:
-      if 'loss:' in line and 'gradnorm' in line:
-        loss = float(re.findall(loss_pattern, line)[0])
-        gradnorm = float(re.findall(gradnorm_pattern, line)[0])
-        losses.append(loss)
-        gradnorms.append(gradnorm)
-      elif 'INFO: f1:' in line:
-        eval_f1 = float(re.findall(f1_eval_pattern, line)[0])
-        f1s_eval.append(eval_f1)
+      _line = json.loads(line)
+      y = _line['dist_goal']
+      ys.append(y)
 
-  # take every other f1s. because we logged train/eval f1s the same way
-  f1s_eval = f1s_eval[1::2]
-  return f1s_eval, losses, gradnorms
+  return ys
 
 
 if __name__ == "__main__":
@@ -168,9 +173,24 @@ if __name__ == "__main__":
   # plot_one_axis('plot.png', xs, lines, legends, title, x_label='x', y_label='r')
 
   # reward vs scale
-  title = 'Reward Functions vs. Scale (c)'
-  xs = np.arange(0., 0.25, 0.001)
-  scales = [1., .5, .2, .1]
-  lines = [(scale * np.exp(-100 * xs * xs) - 1.) for scale in scales]
-  legends = ['decay = ' + str(scale) for scale in scales]
-  plot_one_axis('plot.png', xs, lines, legends, title, x_label='x', y_label='r')
+  # title = 'Reward Functions vs. Scale (c)'
+  # xs = np.arange(0., 0.25, 0.001)
+  # scales = [1., .5, .2, .1]
+  # lines = [(scale * np.exp(-100 * xs * xs) - 1.) for scale in scales]
+  # legends = ['decay = ' + str(scale) for scale in scales]
+  # plot_one_axis('plot.png', xs, lines, legends, title, x_label='x', y_label='r')
+
+  title = 'Velocity vs. Position Control'
+  # log1 = 'logs/ppo_pos_ctrl/monitor.json'
+  # log2 = 'logs/ppo_vel_force_ctrl/monitor.json'
+  log1 = 'logs/ppo_near_pos_ctrl/monitor.json'
+  log2 = 'logs/ppo_near_vel_force_ctrl/monitor.json'
+  ys1 = parse_log(log1)
+  ys2 = parse_log(log2)
+  len = min([len(ys1), len(ys2)])
+  ys1 = ys1[:len]
+  ys2 = ys2[:len]
+  xs = np.arange(len)
+  lines = [ys1, ys2]
+  legends = ['Joint Position Control', 'Joint Velocity Control']
+  plot('plot.png', xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
