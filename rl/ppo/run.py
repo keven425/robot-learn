@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--load', help='load path of model', type=str, default='')
     parser.add_argument('--test', action='store_true', help='test mode', default=False)
     parser.add_argument('--n_step', help='num rollouts', type=int, default=300)
-    parser.add_argument('--n_roll', help='num rollouts', type=int, default=10)
+    parser.add_argument('--n_roll', help='num rollouts', type=int, default=1)
     args = parser.parse_args()
     pp = pprint.PrettyPrinter(indent=1)
     print(pp.pformat(args))
