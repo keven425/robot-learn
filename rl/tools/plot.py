@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
 
   ### 3
-  # title = 'Cube Far: Velocity vs. Position Control'
+  # title = 'Cube Far: Controls'
   # plot_file = 'cube_far_control.png'
   # log1 = 'logs/ppo_pos_ctrl/monitor.json'
   # log2 = 'logs/ppo_vel_force_ctrl/monitor.json'
@@ -249,7 +249,7 @@ if __name__ == "__main__":
   #   'End-effector Velocity Control']
 
   ### 4
-  # title = 'Cube Near: Velocity vs. Position Control'
+  # title = 'Cube Near: Controls'
   # plot_file = 'cube_near_control.png'
   # log1 = 'logs/ppo_near_pos_ctrl/monitor.json'
   # log2 = 'logs/ppo_near_vel_force_ctrl/monitor.json'
