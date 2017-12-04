@@ -192,21 +192,21 @@ if __name__ == "__main__":
 
 
   ### 1
-  # title =   'Ball Near: Joint Control'
-  # log1 = 'logs/ppo_ball_pos_ctrl/monitor.json'
-  # log2 = 'logs/ppo_ball_vel_force_ctrl/monitor.json'
-  # ys1 = parse_log(log1)
-  # ys2 = parse_log(log2)
-  # _len = min([len(ys1), len(ys2)])
-  # ys1 = set_len(ys1, _len)
-  # ys2 = set_len(ys2, _len)
-  # xs = np.arange(_len)
-  # lines = [ys1, ys2]
-  # legends = [
-  #   'Joint Position Control',
-  #   'Joint Velocity Control'
-  # ]
-  # plot('ball_joint_control.png', xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
+  title =   'Ball Near: Joint Control'
+  log1 = 'logs/ppo_ball_pos_ctrl/monitor.json'
+  log2 = 'logs/ppo_ball_vel_force_ctrl/monitor.json'
+  legends = [
+    'Joint Position Control',
+    'Joint Velocity Control'
+  ]
+  ys1 = parse_log(log1)
+  ys2 = parse_log(log2)
+  _len = min([len(ys1), len(ys2)])
+  ys1 = set_len(ys1, _len)
+  ys2 = set_len(ys2, _len)
+  xs = np.arange(_len)
+  lines = [ys1, ys2]
+  plot('ball_joint_control.png', xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
 
 
   ### 2
@@ -215,6 +215,12 @@ if __name__ == "__main__":
   log2 = 'logs/ppo_ik_simple/monitor.json'
   log3 = 'logs/ppo_near_ik/monitor.json'
   log4 = 'logs/ppo_near_ik_simple/monitor.json'
+  legends = [
+    'Cube Far: Full Features',
+    'Cube Far: Simple Features',
+    'Cube Near: Full Features',
+    'Cube Near: Simple Features'
+  ]
   ys1 = parse_log(log1)
   ys2 = parse_log(log2)
   ys3 = parse_log(log3)
@@ -226,50 +232,56 @@ if __name__ == "__main__":
   ys4 = set_len(ys4, _len)
   xs = np.arange(_len)
   lines = [ys1, ys2, ys3, ys4]
-  legends = [
-    'Cube Far: Full Features',
-    'Cube Far: Simple Features',
-    'Cube Near: Full Features',
-    'Cube Near: Simple Features'
-  ]
   plot('cube_endeff_control.png', xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
 
 
   ### 3
-  # title = 'Cube Far: Controls'
-  # plot_file = 'cube_far_control.png'
-  # log1 = 'logs/ppo_pos_ctrl/monitor.json'
-  # log2 = 'logs/ppo_vel_force_ctrl/monitor.json'
-  # log3 = 'logs/ppo_ik_pos_ctrl/monitor.json'
-  # log4 = 'logs/ppo_ik/monitor.json'
-  # legends = [
-  #   'Joint Position Control',
-  #   'Joint Velocity Control',
-  #   'End-effector Position Control',
-  #   'End-effector Velocity Control']
+  title = 'Cube Far: Controls'
+  plot_file = 'cube_far_control.png'
+  log1 = 'logs/ppo_pos_ctrl/monitor.json'
+  log2 = 'logs/ppo_vel_force_ctrl/monitor.json'
+  log3 = 'logs/ppo_ik_pos_ctrl_simple/monitor.json'
+  log4 = 'logs/ppo_ik_simple/monitor.json'
+  legends = [
+    'Joint Position Control',
+    'Joint Velocity Control',
+    'End-effector Position Control',
+    'End-effector Velocity Control']
+  ys1 = parse_log(log1)
+  ys2 = parse_log(log2)
+  ys3 = parse_log(log3)
+  ys4 = parse_log(log4)
+  _len = min([len(ys1), len(ys2)])
+  ys1 = set_len(ys1, _len)
+  ys2 = set_len(ys2, _len)
+  ys3 = set_len(ys3, _len)
+  ys4 = set_len(ys4, _len)
+  xs = np.arange(_len)
+  lines = [ys1, ys2, ys3, ys4]
+  plot(plot_file, xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
+
 
   ### 4
-  # title = 'Cube Near: Controls'
-  # plot_file = 'cube_near_control.png'
-  # log1 = 'logs/ppo_near_pos_ctrl/monitor.json'
-  # log2 = 'logs/ppo_near_vel_force_ctrl/monitor.json'
-  # log3 = 'logs/ppo_near_ik_pos_ctrl/monitor.json'
-  # log4 = 'logs/ppo_near_ik/monitor.json'
-  # legends = [
-  #   'Joint Position Control',
-  #   'Joint Velocity Control',
-  #   'End-effector Position Control',
-  #   'End-effector Velocity Control']
-
-  # ys1 = parse_log(log1)
-  # ys2 = parse_log(log2)
-  # ys3 = parse_log(log3)
-  # ys4 = parse_log(log4)
-  # _len = min([len(ys1), len(ys2)])
-  # ys1 = set_len(ys1, _len)
-  # ys2 = set_len(ys2, _len)
-  # ys3 = set_len(ys3, _len)
-  # ys4 = set_len(ys4, _len)
-  # xs = np.arange(_len)
-  # lines = [ys1, ys2, ys3, ys4]
-  # plot(plot_file, xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
+  title = 'Cube Near: Controls'
+  plot_file = 'cube_near_control.png'
+  log1 = 'logs/ppo_near_pos_ctrl/monitor.json'
+  log2 = 'logs/ppo_near_vel_force_ctrl/monitor.json'
+  log3 = 'logs/ppo_near_ik_pos_ctrl_simple/monitor.json'
+  log4 = 'logs/ppo_near_ik_simple/monitor.json'
+  legends = [
+    'Joint Position Control',
+    'Joint Velocity Control',
+    'End-effector Position Control',
+    'End-effector Velocity Control']
+  ys1 = parse_log(log1)
+  ys2 = parse_log(log2)
+  ys3 = parse_log(log3)
+  ys4 = parse_log(log4)
+  _len = min([len(ys1), len(ys2)])
+  ys1 = set_len(ys1, _len)
+  ys2 = set_len(ys2, _len)
+  ys3 = set_len(ys3, _len)
+  ys4 = set_len(ys4, _len)
+  xs = np.arange(_len)
+  lines = [ys1, ys2, ys3, ys4]
+  plot(plot_file, xs, lines, legends, title, x_label='episode', y_label='distance to goal (moving avg)', plot_line=False, plot_mvavg=True)
